@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { isAxiosError } from "axios";
 import {
   assignFieldPhotos,
   createField,
@@ -12,15 +11,11 @@ import { getPhotos, syncPhotos } from "@/api/photos";
 import { FieldsContext, type NewField } from "@/context/FieldsContext";
 import type { Field, FieldPhoto, MappedFieldPhoto } from "@/types/field";
 import { newFieldSchema } from "@/config/fieldValidation";
-
-const errorMessage = (error: unknown) => {
-  if (isAxiosError<{ error?: string }>(error)) {
-    return error.response?.data?.error ?? "Не удалось выполнить запрос к API.";
-  }
-  return "Произошла непредвиденная ошибка.";
-};
+import { getApiErrorMessage } from "@/api/errors";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export const FieldsProvider = ({ children }: { children: ReactNode }) => {
+  const notifications = useNotifications();
   const [fields, setFields] = useState<Field[]>([]);
   const [activeFieldId, setActiveFieldId] = useState<string>();
   const [activeFieldPhotos, setActiveFieldPhotos] = useState<FieldPhoto[]>([]);
@@ -39,12 +34,18 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
     setError(undefined);
     try {
       setFields(await getFields());
+      notifications.success("Поля загружены", "Данные на карте обновлены.");
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      const message = getApiErrorMessage(
+        requestError,
+        "Не удалось загрузить список полей.",
+      );
+      setError(message);
+      notifications.error("Не удалось загрузить поля", message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notifications]);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +54,13 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
         if (!cancelled) setFields(items);
       })
       .catch((requestError: unknown) => {
-        if (!cancelled) setError(errorMessage(requestError));
+        if (cancelled) return;
+        const message = getApiErrorMessage(
+          requestError,
+          "Не удалось загрузить список полей.",
+        );
+        setError(message);
+        notifications.error("Не удалось загрузить поля", message);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -61,7 +68,7 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [notifications]);
 
   useEffect(() => {
     if (!activeFieldId) {
@@ -86,7 +93,13 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
         setAvailablePhotos(photos.filter((photo) => photo.fieldId === null));
       })
       .catch((requestError: unknown) => {
-        if (!cancelled) setError(errorMessage(requestError));
+        if (cancelled) return;
+        const message = getApiErrorMessage(
+          requestError,
+          "Не удалось получить данные выбранного поля.",
+        );
+        setError(message);
+        notifications.error("Не удалось открыть поле", message);
       })
       .finally(() => {
         if (!cancelled) setDetailLoading(false);
@@ -95,7 +108,7 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [activeFieldId]);
+  }, [activeFieldId, notifications]);
 
   const refreshActiveField = useCallback(async () => {
     if (!activeFieldId) return;
@@ -126,9 +139,19 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
       setFields((current) => [...current, field]);
       setDetailLoading(true);
       setActiveFieldId(field.id);
+      notifications.success(
+        "Поле создано",
+        `«${field.name}» сохранено и появилось на карте.`,
+      );
       return field;
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      notifications.error(
+        "Не удалось создать поле",
+        getApiErrorMessage(
+          requestError,
+          "Проверьте данные и повторите попытку.",
+        ),
+      );
       throw requestError;
     } finally {
       setMutating(false);
@@ -147,8 +170,15 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
             : item,
         ),
       );
+      notifications.success(
+        "Название обновлено",
+        `Поле переименовано в «${name}».`,
+      );
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      notifications.error(
+        "Не удалось переименовать поле",
+        getApiErrorMessage(requestError),
+      );
       throw requestError;
     } finally {
       setMutating(false);
@@ -160,10 +190,23 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
     setError(undefined);
     try {
       const synced = await syncPhotos();
-      await Promise.all([refreshFields(), refreshActiveField()]);
+      const [nextFields] = await Promise.all([
+        getFields(),
+        refreshActiveField(),
+      ]);
+      setFields(nextFields);
+      notifications.success(
+        synced ? "Снимки синхронизированы" : "Синхронизация завершена",
+        synced
+          ? `Новых снимков: ${synced}.`
+          : "Новых снимков в каталоге не найдено.",
+      );
       return synced;
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      notifications.error(
+        "Не удалось синхронизировать снимки",
+        getApiErrorMessage(requestError),
+      );
       throw requestError;
     } finally {
       setMutating(false);
@@ -176,10 +219,21 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
     setError(undefined);
     try {
       const assigned = await assignFieldPhotos(activeFieldId, photoIds);
-      await Promise.all([refreshFields(), refreshActiveField()]);
+      const [nextFields] = await Promise.all([
+        getFields(),
+        refreshActiveField(),
+      ]);
+      setFields(nextFields);
+      notifications.success(
+        "Снимки привязаны",
+        `К полю привязано снимков: ${assigned}.`,
+      );
       return assigned;
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      notifications.error(
+        "Не удалось привязать снимки",
+        getApiErrorMessage(requestError),
+      );
       throw requestError;
     } finally {
       setMutating(false);

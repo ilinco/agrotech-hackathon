@@ -144,16 +144,18 @@ export const HomePage = () => {
         <Container className="shrink-0 pb-4">
           <Alert
             tone="danger"
-            className="flex flex-wrap items-center justify-between gap-3"
+            title="Данные не загрузились"
+            action={
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => void refreshFields()}
+              >
+                Повторить
+              </Button>
+            }
           >
             <span>{error}</span>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => void refreshFields()}
-            >
-              Повторить
-            </Button>
           </Alert>
         </Container>
       )}

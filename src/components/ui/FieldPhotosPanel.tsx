@@ -55,7 +55,6 @@ export const FieldPhotosPanel = ({
   onAssign,
 }: FieldPhotosPanelProps) => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [message, setMessage] = useState<string>();
 
   if (loading) {
     return (
@@ -79,24 +78,13 @@ export const FieldPhotosPanel = ({
           variant="secondary"
           loading={mutating}
           onClick={() => {
-            setMessage(undefined);
-            void onSync()
-              .then((count) =>
-                setMessage(
-                  count
-                    ? `Найдено новых снимков: ${count}.`
-                    : "Новых снимков не найдено.",
-                ),
-              )
-              .catch(() => undefined);
+            void onSync().catch(() => undefined);
           }}
         >
           <RefreshCw aria-hidden="true" className="size-4" />
           Синхронизировать
         </Button>
       </div>
-
-      {message && <p className="text-xs text-slate-600">{message}</p>}
 
       {photos.length ? (
         <ul className="space-y-2">
@@ -142,11 +130,9 @@ export const FieldPhotosPanel = ({
             disabled={!selectedIds.length}
             loading={mutating}
             onClick={() => {
-              setMessage(undefined);
               void onAssign(selectedIds)
-                .then((count) => {
+                .then(() => {
                   setSelectedIds([]);
-                  setMessage(`Привязано снимков: ${count}.`);
                 })
                 .catch(() => undefined);
             }}
