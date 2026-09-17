@@ -1,41 +1,23 @@
 import App from "@/App";
-import { createElement } from "react";
 import { StaticLinks } from "@/config/StaticLinks";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { HomePage } from "@/pages/HomePage";
-import { UpcomingPage } from "@/pages/UpcomingPage";
-import { createBrowserRouter } from "react-router";
+import { PlantsPage } from "@/pages/PlantsPage";
+import { createBrowserRouter, redirect } from "react-router";
 
 const router = createBrowserRouter([
   {
-    path: StaticLinks.home,
+    path: "/",
     Component: App,
     children: [
-      { index: true, Component: HomePage },
+      { index: true, loader: () => redirect(StaticLinks.map) },
+      { path: StaticLinks.map, Component: HomePage },
+      { path: StaticLinks.analytics, Component: AnalyticsPage },
       {
-        path: StaticLinks.fields,
-        Component: () =>
-          createElement(UpcomingPage, {
-            title: "Поля",
-            description: "Здесь появятся карта полей, контуры и снимки.",
-          }),
+        path: `${StaticLinks.analytics}/:fieldId`,
+        Component: AnalyticsPage,
       },
-      {
-        path: StaticLinks.routes,
-        Component: () =>
-          createElement(UpcomingPage, {
-            title: "Маршруты",
-            description: "Здесь появятся маршруты облёта и точки маршрута.",
-          }),
-      },
-      {
-        path: StaticLinks.plants,
-        Component: () =>
-          createElement(UpcomingPage, {
-            title: "Растения",
-            description:
-              "Здесь появится справочник видов сорняков и стадий вегетации.",
-          }),
-      },
+      { path: StaticLinks.plants, Component: PlantsPage },
     ],
   },
 ]);

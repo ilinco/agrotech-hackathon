@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  ChartSpline,
   ChevronRight,
   MapPinned,
   Pencil,
@@ -16,8 +17,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Dialog } from "@/components/ui/Dialog";
 import { useFields } from "@/hooks/useFields";
+import { DynamicLinks } from "@/config/DynamicLinks";
+import { NavLink } from "react-router";
 import type { GeographicCoordinate } from "@/types/field";
-import { boundaryError, pointColor } from "./map/fieldBoundary";
+import {
+  boundaryError,
+  coordinateFormSchema,
+  fieldNameSchema,
+  newFieldSchema,
+} from "@/types/fieldValidation";
+import { pointColor } from "./map/fieldBoundary";
 import { FieldMap } from "./map/FieldMap";
 
 export const HomePage = () => {
@@ -29,10 +38,18 @@ export const HomePage = () => {
   const [drawing, setDrawing] = useState(false);
   const [draft, setDraft] = useState<GeographicCoordinate[]>([]);
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string>();
+  const [coordinateErrors, setCoordinateErrors] = useState<{
+    latitude?: string;
+    longitude?: string;
+  }>({});
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [selectedDraftIndex, setSelectedDraftIndex] = useState<number | null>(
     null,
+  );
+  const [pointInputMode, setPointInputMode] = useState<"map" | "coordinates">(
+    "map",
   );
   const error = boundaryError(draft);
   useEffect(() => {
@@ -51,15 +68,21 @@ export const HomePage = () => {
     setDrawing(false);
     setDraft([]);
     setName("");
+    setNameError(undefined);
+    setCoordinateErrors({});
     setSelectedDraftIndex(null);
+    setPointInputMode("map");
     setConfirmCancel(false);
   };
   const saveField = () => {
-    if (error || !name.trim()) return;
-    addField({
-      name: name.trim(),
-      boundary: draft,
-    });
+    const result = newFieldSchema.safeParse({ name, boundary: draft });
+    if (!result.success) {
+      setNameError(
+        result.error.issues.find((issue) => issue.path[0] === "name")?.message,
+      );
+      return;
+    }
+    addField(result.data);
     setShowBoundary(true);
     setDetailView("field");
     cancelDrawing();
@@ -145,6 +168,7 @@ export const HomePage = () => {
             field={activeField}
             fields={fields}
             drawing={drawing}
+            pointInputMode={pointInputMode}
             draft={draft}
             onAddPoint={(point) => {
               if (selectedDraftIndex === null) {
@@ -159,7 +183,10 @@ export const HomePage = () => {
               setSelectedDraftIndex(null);
             }}
             selectedDraftIndex={selectedDraftIndex}
-            onSelectDraftPoint={setSelectedDraftIndex}
+            onSelectDraftPoint={(index) => {
+              setSelectedDraftIndex(index);
+              setCoordinateErrors({});
+            }}
             selected={Boolean(activeField)}
             showBoundary={showBoundary}
             onSelect={(field) => openField(field.id)}
@@ -178,17 +205,80 @@ export const HomePage = () => {
               </div>
               <ol className="space-y-1.5 border-l-2 border-green-200 pl-3 text-sm text-slate-600">
                 <li>1. Укажите название поля.</li>
-                <li>2. Поставьте минимум три точки на карте.</li>
+                <li>
+                  2. Добавьте минимум три точки{" "}
+                  {pointInputMode === "map" ? "на карте" : "координатами"}.
+                </li>
                 <li>3. Проверьте контур и сохраните поле.</li>
               </ol>
               <Input
                 label="Название поля"
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                error={nameError}
+                onChange={(event) => {
+                  const nextName = event.target.value;
+                  setName(nextName);
+                  if (nameError) {
+                    const result = fieldNameSchema.safeParse(nextName);
+                    setNameError(
+                      result.success
+                        ? undefined
+                        : result.error.issues[0]?.message,
+                    );
+                  }
+                }}
+                onBlur={() => {
+                  const result = fieldNameSchema.safeParse(name);
+                  setNameError(
+                    result.success
+                      ? undefined
+                      : result.error.issues[0]?.message,
+                  );
+                }}
                 required
               />
               <p className="text-sm text-slate-500">
-                Точки соединяются по порядку, контур замыкается автоматически.
+                Выберите один способ добавления точек. Контур замыкается
+                автоматически.
+              </p>
+              <div
+                role="group"
+                aria-label="Способ добавления точек"
+                className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
+              >
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={pointInputMode === "map" ? "secondary" : "ghost"}
+                  aria-pressed={pointInputMode === "map"}
+                  onClick={() => {
+                    setPointInputMode("map");
+                    setCoordinateErrors({});
+                    setSelectedDraftIndex(null);
+                  }}
+                >
+                  На карте
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    pointInputMode === "coordinates" ? "secondary" : "ghost"
+                  }
+                  aria-pressed={pointInputMode === "coordinates"}
+                  onClick={() => {
+                    setPointInputMode("coordinates");
+                    setCoordinateErrors({});
+                    setSelectedDraftIndex(null);
+                  }}
+                >
+                  Координатами
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {pointInputMode === "map"
+                  ? "Нажмите на карту в нужных местах. Для изменения точки выберите её номер и нажмите на новое место."
+                  : "Введите широту и долготу каждой точки. Новая точка добавится в конец списка."}
               </p>
               <p role="status" className="text-sm text-slate-600">
                 Точек: {draft.length}. {error}
@@ -217,11 +307,12 @@ export const HomePage = () => {
                       className="min-h-8 px-2"
                       aria-label={`Редактировать точку ${index + 1}`}
                       aria-pressed={selectedDraftIndex === index}
-                      onClick={() =>
+                      onClick={() => {
+                        setCoordinateErrors({});
                         setSelectedDraftIndex((current) =>
                           current === index ? null : index,
-                        )
-                      }
+                        );
+                      }}
                     >
                       <Pencil aria-hidden="true" className="size-4" />
                     </Button>
@@ -244,76 +335,101 @@ export const HomePage = () => {
                   </li>
                 ))}
               </ol>
-              <form
-                key={selectedDraftIndex ?? "new-point"}
-                className="flex flex-col gap-3"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const form = event.currentTarget;
-                  const values = new FormData(form);
-                  const latitude = Number(values.get("latitude"));
-                  const longitude = Number(values.get("longitude"));
-                  if (
-                    !Number.isFinite(latitude) ||
-                    !Number.isFinite(longitude) ||
-                    Math.abs(latitude) > 90 ||
-                    Math.abs(longitude) > 180
-                  )
-                    return;
-                  if (selectedDraftIndex === null) {
-                    setDraft((current) => [
-                      ...current,
-                      { latitude, longitude },
-                    ]);
-                  } else {
-                    setDraft((current) =>
-                      current.map((point, index) =>
-                        index === selectedDraftIndex
-                          ? { latitude, longitude }
-                          : point,
-                      ),
-                    );
-                    setSelectedDraftIndex(null);
-                  }
-                  form.reset();
-                }}
-              >
-                <div className="grid gap-3">
-                  <Input
-                    label="Широта"
-                    name="latitude"
-                    type="number"
-                    step="any"
-                    min={-90}
-                    max={90}
-                    defaultValue={
-                      selectedDraftIndex === null
-                        ? undefined
-                        : draft[selectedDraftIndex]?.latitude
+              {pointInputMode === "coordinates" && (
+                <form
+                  key={selectedDraftIndex ?? "new-point"}
+                  className="flex flex-col gap-3"
+                  noValidate
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = event.currentTarget;
+                    const values = new FormData(form);
+                    const result = coordinateFormSchema.safeParse({
+                      latitude: values.get("latitude"),
+                      longitude: values.get("longitude"),
+                    });
+                    if (!result.success) {
+                      const errors: typeof coordinateErrors = {};
+                      for (const issue of result.error.issues) {
+                        const field = issue.path[0];
+                        if (field === "latitude" || field === "longitude") {
+                          errors[field] ??= issue.message;
+                        }
+                      }
+                      setCoordinateErrors(errors);
+                      return;
                     }
-                    required
-                  />
-                  <Input
-                    label="Долгота"
-                    name="longitude"
-                    type="number"
-                    step="any"
-                    min={-180}
-                    max={180}
-                    defaultValue={
-                      selectedDraftIndex === null
-                        ? undefined
-                        : draft[selectedDraftIndex]?.longitude
+                    const { latitude, longitude } = result.data;
+                    setCoordinateErrors({});
+                    if (selectedDraftIndex === null) {
+                      setDraft((current) => [
+                        ...current,
+                        { latitude, longitude },
+                      ]);
+                    } else {
+                      setDraft((current) =>
+                        current.map((point, index) =>
+                          index === selectedDraftIndex
+                            ? { latitude, longitude }
+                            : point,
+                        ),
+                      );
+                      setSelectedDraftIndex(null);
                     }
-                    required
-                  />
-                </div>
-                <Button type="submit" variant="secondary">
-                  {selectedDraftIndex === null
-                    ? "Добавить по координатам"
-                    : "Сохранить координаты точки"}
-                </Button>
-              </form>
+                    form.reset();
+                  }}
+                >
+                  <div className="grid gap-3">
+                    <Input
+                      label="Широта"
+                      name="latitude"
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      error={coordinateErrors.latitude}
+                      onChange={() =>
+                        setCoordinateErrors((current) => ({
+                          ...current,
+                          latitude: undefined,
+                        }))
+                      }
+                      defaultValue={
+                        selectedDraftIndex === null
+                          ? undefined
+                          : draft[selectedDraftIndex]?.latitude
+                      }
+                      required
+                    />
+                    <Input
+                      label="Долгота"
+                      name="longitude"
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      error={coordinateErrors.longitude}
+                      onChange={() =>
+                        setCoordinateErrors((current) => ({
+                          ...current,
+                          longitude: undefined,
+                        }))
+                      }
+                      defaultValue={
+                        selectedDraftIndex === null
+                          ? undefined
+                          : draft[selectedDraftIndex]?.longitude
+                      }
+                      required
+                    />
+                  </div>
+                  <Button type="submit" variant="secondary">
+                    {selectedDraftIndex === null
+                      ? "Добавить по координатам"
+                      : "Сохранить координаты точки"}
+                  </Button>
+                </form>
+              )}
               <div className="grid gap-2">
                 <Button
                   variant="secondary"
@@ -337,7 +453,7 @@ export const HomePage = () => {
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 <Button
                   className="w-full"
-                  disabled={Boolean(error) || !name.trim()}
+                  disabled={Boolean(error)}
                   onClick={saveField}
                 >
                   Сохранить
@@ -391,7 +507,13 @@ export const HomePage = () => {
               </div>
               {detailView === "field" ? (
                 <div className="p-4">
-                  <Badge>В текущей сессии</Badge>
+                  <NavLink
+                    to={DynamicLinks.analytics(activeField.id)}
+                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                  >
+                    <ChartSpline aria-hidden="true" className="size-4" />
+                    Открыть аналитику
+                  </NavLink>
                   <details className="mt-4 text-sm">
                     <summary className="cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-green-700">
                       Координаты контура · {activeField.boundary.length} точки

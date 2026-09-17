@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { FieldsContext, type NewField } from "@/context/FieldsContext";
 import type { Field } from "@/types/field";
+import { newFieldSchema } from "@/types/fieldValidation";
 
 export const FieldsProvider = ({ children }: { children: ReactNode }) => {
   const [fields, setFields] = useState<Field[]>([]);
@@ -8,7 +9,10 @@ export const FieldsProvider = ({ children }: { children: ReactNode }) => {
   const activeField = fields.find((field) => field.id === activeFieldId);
 
   const addField = (newField: NewField) => {
-    const field: Field = { ...newField, id: crypto.randomUUID() };
+    const field: Field = {
+      ...newFieldSchema.parse(newField),
+      id: crypto.randomUUID(),
+    };
     setFields((currentFields) => [...currentFields, field]);
     setActiveFieldId(field.id);
     return field;

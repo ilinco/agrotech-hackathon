@@ -21,6 +21,7 @@ type FieldMapProps = {
   field?: Field;
   fields: Field[];
   drawing: boolean;
+  pointInputMode: "map" | "coordinates";
   draft: GeographicCoordinate[];
   onAddPoint: (point: GeographicCoordinate) => void;
   selectedDraftIndex: number | null;
@@ -67,6 +68,7 @@ export const FieldMap = ({
   field,
   fields,
   drawing,
+  pointInputMode,
   draft,
   onAddPoint,
   selectedDraftIndex,
@@ -93,8 +95,12 @@ export const FieldMap = ({
           <Crosshair aria-hidden="true" className="size-5 text-green-800" />
           <p className="py-2 text-sm font-medium text-green-900">
             {selectedDraftIndex === null
-              ? `Режим рисования · нажмите на карту, чтобы добавить точку ${draft.length + 1}`
-              : `Редактирование точки ${selectedDraftIndex + 1} · нажмите на новое место`}
+              ? pointInputMode === "map"
+                ? `Режим рисования · нажмите на карту, чтобы добавить точку ${draft.length + 1}`
+                : "Режим координат · добавляйте точки через форму слева"
+              : pointInputMode === "map"
+                ? `Редактирование точки ${selectedDraftIndex + 1} · нажмите на новое место`
+                : `Редактирование точки ${selectedDraftIndex + 1} · измените координаты в форме`}
           </p>
         </div>
       )}
@@ -107,9 +113,9 @@ export const FieldMap = ({
           boundsOptions={{ padding: [55, 55] }}
           zoomControl={false}
           scrollWheelZoom
-          className={`z-0 h-full min-h-80 w-full bg-slate-100 ${drawing ? "cursor-crosshair" : ""}`}
+          className={`z-0 h-full min-h-80 w-full bg-slate-100 ${drawing && pointInputMode === "map" ? "cursor-crosshair" : ""}`}
           aria-label={
-            drawing
+            drawing && pointInputMode === "map"
               ? "Интерактивная карта в режиме рисования поля. Нажмите на карту, чтобы добавить точку контура."
               : "Интерактивная карта. Масштаб: кнопки плюс и минус; перемещение: стрелки."
           }
@@ -147,7 +153,9 @@ export const FieldMap = ({
                 </Tooltip>
               </Polygon>
             ))}
-          {drawing && <DrawingEvents onAddPoint={onAddPoint} />}
+          {drawing && pointInputMode === "map" && (
+            <DrawingEvents onAddPoint={onAddPoint} />
+          )}
           {drawing && draft.length >= 3 && (
             <Polygon
               interactive={false}
@@ -172,7 +180,7 @@ export const FieldMap = ({
               key={index}
               center={[point.latitude, point.longitude]}
               radius={8}
-              interactive={drawing}
+              interactive={drawing && pointInputMode === "map"}
               bubblingMouseEvents={false}
               pathOptions={{
                 color:
@@ -182,7 +190,9 @@ export const FieldMap = ({
                 fillOpacity: 1,
               }}
               eventHandlers={
-                drawing ? { click: () => onSelectDraftPoint(index) } : undefined
+                drawing && pointInputMode === "map"
+                  ? { click: () => onSelectDraftPoint(index) }
+                  : undefined
               }
             >
               <Tooltip permanent direction="top">

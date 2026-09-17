@@ -1,6 +1,5 @@
 export const StaticLinks = {
-  home: "/",
-  fields: "/fields",
-  routes: "/routes",
+  map: "/map",
+  analytics: "/analytics",
   plants: "/plants",
 } as const;

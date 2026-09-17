@@ -3,11 +3,11 @@ import { Container } from "@/components/layout/Container";
 import { navigationItems } from "@/config/Navigation";
 
 export const Header = () => (
-  <header className="border-b border-slate-200 bg-white">
+  <header className="border-b border-slate-200 bg-white sticky top-0 z-1000">
     <Container>
       <div className="flex min-h-16 items-center justify-between gap-6">
         <NavLink
-          to="/"
+          to={navigationItems[0].to}
           className="text-lg font-semibold tracking-tight text-green-800"
         >
           agrotech.

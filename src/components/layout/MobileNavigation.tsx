@@ -7,7 +7,7 @@ export const MobileNavigation = () => {
       aria-label="Мобильная навигация"
       className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white md:hidden"
     >
-      <div className="mx-auto grid max-w-lg grid-cols-4">
+      <div className="mx-auto grid max-w-lg grid-cols-3">
         {navigationItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
