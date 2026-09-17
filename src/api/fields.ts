@@ -1,18 +1,15 @@
-import { api } from "@/api/axios";
+import { api } from '@/api/axios';
 import type {
   Field,
   FieldPhoto,
   GeographicCoordinate,
   MappedFieldPhoto,
-} from "@/types/field";
+} from '@/types/field';
 
 type ApiField = {
   id: number;
   name: string;
-  minLat: number | null;
-  minLng: number | null;
-  maxLat: number | null;
-  maxLng: number | null;
+  boundary: Array<{ lat: number; lng: number }> | null;
   createdAt: string;
   _count?: { photos: number };
   photos?: FieldPhoto[];
@@ -20,21 +17,18 @@ type ApiField = {
 
 type FieldPayload = {
   name: string;
-  minLat: number;
-  minLng: number;
-  maxLat: number;
-  maxLng: number;
+  boundary: Array<{ lat: number; lng: number }>;
 };
 
 type FieldMapResponse = {
-  type: "FeatureCollection";
+  type: 'FeatureCollection';
   features: Array<{
-    type: "Feature";
+    type: 'Feature';
     geometry:
-      | { type: "Point"; coordinates: [number, number] }
-      | { type: "Polygon"; coordinates: number[][][] };
+      | { type: 'Point'; coordinates: [number, number] }
+      | { type: 'Polygon'; coordinates: number[][][] };
     properties: {
-      kind: "boundary" | "photo";
+      kind: 'boundary' | 'photo';
       id?: number;
       photoId?: number;
       originalName?: string;
@@ -44,21 +38,10 @@ type FieldMapResponse = {
 };
 
 const boundaryFromApiField = (field: ApiField): GeographicCoordinate[] => {
-  if (
-    field.minLat === null ||
-    field.minLng === null ||
-    field.maxLat === null ||
-    field.maxLng === null
-  ) {
-    return [];
-  }
-
-  return [
-    { latitude: field.minLat, longitude: field.minLng },
-    { latitude: field.minLat, longitude: field.maxLng },
-    { latitude: field.maxLat, longitude: field.maxLng },
-    { latitude: field.maxLat, longitude: field.minLng },
-  ];
+  return (field.boundary ?? []).map(({ lat, lng }) => ({
+    latitude: lat,
+    longitude: lng,
+  }));
 };
 
 const toField = (field: ApiField): Field => ({
@@ -73,20 +56,17 @@ const toFieldPayload = (
   name: string,
   boundary: GeographicCoordinate[],
 ): FieldPayload => {
-  const latitudes = boundary.map(({ latitude }) => latitude);
-  const longitudes = boundary.map(({ longitude }) => longitude);
-
   return {
     name,
-    minLat: Math.min(...latitudes),
-    minLng: Math.min(...longitudes),
-    maxLat: Math.max(...latitudes),
-    maxLng: Math.max(...longitudes),
+    boundary: boundary.map(({ latitude, longitude }) => ({
+      lat: latitude,
+      lng: longitude,
+    })),
   };
 };
 
 export const getFields = async (): Promise<Field[]> => {
-  const { data } = await api.get<ApiField[]>("/fields");
+  const { data } = await api.get<ApiField[]>('/fields');
   return data.map(toField);
 };
 
@@ -102,7 +82,7 @@ export const createField = async (
   boundary: GeographicCoordinate[],
 ): Promise<Field> => {
   const { data } = await api.post<ApiField>(
-    "/fields",
+    '/fields',
     toFieldPayload(name, boundary),
   );
   return toField(data);
@@ -113,6 +93,19 @@ export const updateFieldName = async (
   name: string,
 ): Promise<Field> => {
   const { data } = await api.patch<ApiField>(`/fields/${fieldId}`, { name });
+  return toField(data);
+};
+
+export const updateFieldBoundary = async (
+  fieldId: string,
+  boundary: GeographicCoordinate[],
+): Promise<Field> => {
+  const { data } = await api.patch<ApiField>(`/fields/${fieldId}`, {
+    boundary: boundary.map(({ latitude, longitude }) => ({
+      lat: latitude,
+      lng: longitude,
+    })),
+  });
   return toField(data);
 };
 
@@ -133,7 +126,7 @@ export const getMappedFieldPhotos = async (
   const { data } = await api.get<FieldMapResponse>(`/fields/${fieldId}/map`);
 
   return data.features.flatMap((feature) => {
-    if (feature.geometry.type !== "Point") return [];
+    if (feature.geometry.type !== 'Point') return [];
     const [longitude, latitude] = feature.geometry.coordinates;
     const id = feature.properties.photoId ?? feature.properties.id;
     if (id === undefined) return [];
