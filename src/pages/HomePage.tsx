@@ -1,48 +1,30 @@
 import { useEffect, useState } from "react";
-import {
-  ChartSpline,
-  ChevronRight,
-  MapPinned,
-  Pencil,
-  RotateCcw,
-  ScanLine,
-  Trash2,
-  X,
-} from "lucide-react";
-import { Container } from "@/components/layout/Container";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Input } from "@/components/ui/Input";
 import { Dialog } from "@/components/ui/Dialog";
+import { FieldCreationPanel } from "../components/ui/FieldCreationPanel";
+import { FieldDetailsPanel } from "../components/ui/FieldDetailsPanel";
+import { FieldDisplaySettings } from "@/components/ui/FieldDisplaySettings";
+import { FieldsList } from "@/components/ui/FieldsList";
+import { Container } from "@/components/layout/Container";
+import { FieldMap } from "./map/FieldMap";
 import { useFields } from "@/hooks/useFields";
-import { DynamicLinks } from "@/config/DynamicLinks";
-import { NavLink } from "react-router";
 import type { GeographicCoordinate } from "@/types/field";
 import {
-  boundaryError,
-  coordinateFormSchema,
   fieldNameSchema,
   newFieldSchema,
-} from "@/types/fieldValidation";
-import { pointColor } from "./map/fieldBoundary";
-import { FieldMap } from "./map/FieldMap";
+  boundaryError,
+} from "@/config/fieldValidation";
 
 export const HomePage = () => {
-  const [showBoundary, setShowBoundary] = useState(true);
-  const [detailView, setDetailView] = useState<"field" | "images">("field");
-
   const { fields, activeField, addField, selectField, clearActiveField } =
     useFields();
+  const [showBoundary, setShowBoundary] = useState(true);
+  const [detailView, setDetailView] = useState<"field" | "images">("field");
   const [drawing, setDrawing] = useState(false);
   const [draft, setDraft] = useState<GeographicCoordinate[]>([]);
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string>();
-  const [coordinateErrors, setCoordinateErrors] = useState<{
-    latitude?: string;
-    longitude?: string;
-  }>({});
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [selectedDraftIndex, setSelectedDraftIndex] = useState<number | null>(
@@ -51,7 +33,8 @@ export const HomePage = () => {
   const [pointInputMode, setPointInputMode] = useState<"map" | "coordinates">(
     "map",
   );
-  const error = boundaryError(draft);
+  const draftError = boundaryError(draft);
+
   useEffect(() => {
     if (!drawing || (!draft.length && !name.trim())) return;
     const preventUnload = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -64,16 +47,17 @@ export const HomePage = () => {
     selectField(fieldId);
     setDetailView("field");
   };
+
   const cancelDrawing = () => {
     setDrawing(false);
     setDraft([]);
     setName("");
     setNameError(undefined);
-    setCoordinateErrors({});
     setSelectedDraftIndex(null);
     setPointInputMode("map");
     setConfirmCancel(false);
   };
+
   const saveField = () => {
     const result = newFieldSchema.safeParse({ name, boundary: draft });
     if (!result.success) {
@@ -86,6 +70,31 @@ export const HomePage = () => {
     setShowBoundary(true);
     setDetailView("field");
     cancelDrawing();
+  };
+
+  const addDraftPoint = (point: GeographicCoordinate) => {
+    if (selectedDraftIndex === null) {
+      setDraft((current) => [...current, point]);
+      return;
+    }
+    setDraft((current) =>
+      current.map((item, index) =>
+        index === selectedDraftIndex ? point : item,
+      ),
+    );
+    setSelectedDraftIndex(null);
+  };
+
+  const addCoordinate = (point: GeographicCoordinate) => {
+    if (selectedDraftIndex === null) setDraft((current) => [...current, point]);
+    else {
+      setDraft((current) =>
+        current.map((item, index) =>
+          index === selectedDraftIndex ? point : item,
+        ),
+      );
+      setSelectedDraftIndex(null);
+    }
   };
 
   return (
@@ -116,50 +125,15 @@ export const HomePage = () => {
             aria-label="Поля и настройки"
             className="flex min-h-0 flex-col rounded-lg border border-slate-200 bg-white lg:overflow-y-auto"
           >
-            <div className="border-b border-slate-200 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-medium">Поля</h2>
-                <span className="text-xs text-slate-500">
-                  Всего: {fields.length}
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {fields.map((field) => (
-                  <button
-                    key={field.id}
-                    type="button"
-                    disabled={drawing}
-                    aria-pressed={activeField?.id === field.id}
-                    onClick={() => openField(field.id)}
-                    className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left focus-visible:outline-2 focus-visible:outline-green-700 disabled:opacity-50 ${activeField?.id === field.id ? "border-green-700 bg-green-50" : "border-slate-200 hover:bg-slate-50"}`}
-                  >
-                    <MapPinned
-                      aria-hidden="true"
-                      className="size-5 shrink-0 text-green-800"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block wrap-break-word text-sm font-medium">
-                        {field.name}
-                      </span>
-                      <span className="block text-xs text-slate-500">
-                        В текущей сессии
-                      </span>
-                    </span>
-                    <ChevronRight
-                      aria-hidden="true"
-                      className="size-4 shrink-0 text-slate-400"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="px-4 py-3">
-              <Checkbox
-                label="Показывать контур поля"
-                checked={showBoundary}
-                onChange={(event) => setShowBoundary(event.target.checked)}
-              />
-            </div>
+            <FieldsList
+              fields={fields}
+              activeFieldId={activeField?.id}
+              onSelectField={openField}
+            />
+            <FieldDisplaySettings
+              showBoundary={showBoundary}
+              onShowBoundaryChange={setShowBoundary}
+            />
           </aside>
         )}
 
@@ -170,420 +144,75 @@ export const HomePage = () => {
             drawing={drawing}
             pointInputMode={pointInputMode}
             draft={draft}
-            onAddPoint={(point) => {
-              if (selectedDraftIndex === null) {
-                setDraft((current) => [...current, point]);
-                return;
-              }
-              setDraft((current) =>
-                current.map((draftPoint, index) =>
-                  index === selectedDraftIndex ? point : draftPoint,
-                ),
-              );
-              setSelectedDraftIndex(null);
-            }}
+            onAddPoint={addDraftPoint}
             selectedDraftIndex={selectedDraftIndex}
-            onSelectDraftPoint={(index) => {
-              setSelectedDraftIndex(index);
-              setCoordinateErrors({});
-            }}
+            onSelectDraftPoint={setSelectedDraftIndex}
             selected={Boolean(activeField)}
             showBoundary={showBoundary}
             onSelect={(field) => openField(field.id)}
           />
         </div>
 
-        <section
-          aria-label={drawing ? "Добавление поля" : "Информация о поле"}
-          className={`min-h-0 rounded-lg border bg-white lg:col-start-1 lg:overflow-y-auto ${drawing ? "border-green-600" : "border-slate-200"}`}
-        >
-          {drawing ? (
-            <div className="flex flex-col gap-4 p-4">
-              <div>
-                <Badge tone="success">Создание контура</Badge>
-                <h2 className="mt-2 text-base font-medium">Новое поле</h2>
-              </div>
-              <ol className="space-y-1.5 border-l-2 border-green-200 pl-3 text-sm text-slate-600">
-                <li>1. Укажите название поля.</li>
-                <li>
-                  2. Добавьте минимум три точки{" "}
-                  {pointInputMode === "map" ? "на карте" : "координатами"}.
-                </li>
-                <li>3. Проверьте контур и сохраните поле.</li>
-              </ol>
-              <Input
-                label="Название поля"
-                value={name}
-                error={nameError}
-                onChange={(event) => {
-                  const nextName = event.target.value;
-                  setName(nextName);
-                  if (nameError) {
-                    const result = fieldNameSchema.safeParse(nextName);
-                    setNameError(
-                      result.success
-                        ? undefined
-                        : result.error.issues[0]?.message,
-                    );
-                  }
-                }}
-                onBlur={() => {
-                  const result = fieldNameSchema.safeParse(name);
-                  setNameError(
-                    result.success
-                      ? undefined
-                      : result.error.issues[0]?.message,
-                  );
-                }}
-                required
-              />
-              <p className="text-sm text-slate-500">
-                Выберите один способ добавления точек. Контур замыкается
-                автоматически.
-              </p>
-              <div
-                role="group"
-                aria-label="Способ добавления точек"
-                className="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
-              >
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={pointInputMode === "map" ? "secondary" : "ghost"}
-                  aria-pressed={pointInputMode === "map"}
-                  onClick={() => {
-                    setPointInputMode("map");
-                    setCoordinateErrors({});
-                    setSelectedDraftIndex(null);
-                  }}
-                >
-                  На карте
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={
-                    pointInputMode === "coordinates" ? "secondary" : "ghost"
-                  }
-                  aria-pressed={pointInputMode === "coordinates"}
-                  onClick={() => {
-                    setPointInputMode("coordinates");
-                    setCoordinateErrors({});
-                    setSelectedDraftIndex(null);
-                  }}
-                >
-                  Координатами
-                </Button>
-              </div>
-              <p className="text-xs text-slate-500">
-                {pointInputMode === "map"
-                  ? "Нажмите на карту в нужных местах. Для изменения точки выберите её номер и нажмите на новое место."
-                  : "Введите широту и долготу каждой точки. Новая точка добавится в конец списка."}
-              </p>
-              <p role="status" className="text-sm text-slate-600">
-                Точек: {draft.length}. {error}
-              </p>
-              <ol className="max-h-48 space-y-2 overflow-y-auto text-xs tabular-nums">
-                {draft.map((point, index) => (
-                  <li
-                    key={index}
-                    className={`flex items-center gap-2 rounded-md border p-2 ${selectedDraftIndex === index ? "border-green-700 bg-green-50" : "border-slate-200"}`}
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      aria-hidden="true"
-                      className="shrink-0"
-                    >
-                      <circle cx="6" cy="6" r="5" fill={pointColor(index)} />
-                    </svg>
-                    <span className="min-w-0 flex-1">
-                      {index + 1}. Ш: {point.latitude.toFixed(6)} · Д:{" "}
-                      {point.longitude.toFixed(6)}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-8 px-2"
-                      aria-label={`Редактировать точку ${index + 1}`}
-                      aria-pressed={selectedDraftIndex === index}
-                      onClick={() => {
-                        setCoordinateErrors({});
-                        setSelectedDraftIndex((current) =>
-                          current === index ? null : index,
-                        );
-                      }}
-                    >
-                      <Pencil aria-hidden="true" className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-8 px-2 text-red-700 hover:bg-red-50"
-                      aria-label={`Удалить точку ${index + 1}`}
-                      onClick={() => {
-                        setDraft((current) =>
-                          current.filter(
-                            (_, pointIndex) => pointIndex !== index,
-                          ),
-                        );
-                        setSelectedDraftIndex(null);
-                      }}
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ol>
-              {pointInputMode === "coordinates" && (
-                <form
-                  key={selectedDraftIndex ?? "new-point"}
-                  className="flex flex-col gap-3"
-                  noValidate
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const form = event.currentTarget;
-                    const values = new FormData(form);
-                    const result = coordinateFormSchema.safeParse({
-                      latitude: values.get("latitude"),
-                      longitude: values.get("longitude"),
-                    });
-                    if (!result.success) {
-                      const errors: typeof coordinateErrors = {};
-                      for (const issue of result.error.issues) {
-                        const field = issue.path[0];
-                        if (field === "latitude" || field === "longitude") {
-                          errors[field] ??= issue.message;
-                        }
-                      }
-                      setCoordinateErrors(errors);
-                      return;
-                    }
-                    const { latitude, longitude } = result.data;
-                    setCoordinateErrors({});
-                    if (selectedDraftIndex === null) {
-                      setDraft((current) => [
-                        ...current,
-                        { latitude, longitude },
-                      ]);
-                    } else {
-                      setDraft((current) =>
-                        current.map((point, index) =>
-                          index === selectedDraftIndex
-                            ? { latitude, longitude }
-                            : point,
-                        ),
-                      );
-                      setSelectedDraftIndex(null);
-                    }
-                    form.reset();
-                  }}
-                >
-                  <div className="grid gap-3">
-                    <Input
-                      label="Широта"
-                      name="latitude"
-                      type="number"
-                      step="any"
-                      min={-90}
-                      max={90}
-                      error={coordinateErrors.latitude}
-                      onChange={() =>
-                        setCoordinateErrors((current) => ({
-                          ...current,
-                          latitude: undefined,
-                        }))
-                      }
-                      defaultValue={
-                        selectedDraftIndex === null
-                          ? undefined
-                          : draft[selectedDraftIndex]?.latitude
-                      }
-                      required
-                    />
-                    <Input
-                      label="Долгота"
-                      name="longitude"
-                      type="number"
-                      step="any"
-                      min={-180}
-                      max={180}
-                      error={coordinateErrors.longitude}
-                      onChange={() =>
-                        setCoordinateErrors((current) => ({
-                          ...current,
-                          longitude: undefined,
-                        }))
-                      }
-                      defaultValue={
-                        selectedDraftIndex === null
-                          ? undefined
-                          : draft[selectedDraftIndex]?.longitude
-                      }
-                      required
-                    />
-                  </div>
-                  <Button type="submit" variant="secondary">
-                    {selectedDraftIndex === null
-                      ? "Добавить по координатам"
-                      : "Сохранить координаты точки"}
-                  </Button>
-                </form>
-              )}
-              <div className="grid gap-2">
-                <Button
-                  variant="secondary"
-                  disabled={!draft.length}
-                  onClick={() => {
-                    setDraft((current) => current.slice(0, -1));
-                    setSelectedDraftIndex(null);
-                  }}
-                >
-                  Убрать последнюю точку
-                </Button>
-                <Button
-                  variant="ghost"
-                  disabled={!draft.length}
-                  onClick={() => setConfirmReset(true)}
-                >
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                  Сбросить все точки
-                </Button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <Button
-                  className="w-full"
-                  disabled={Boolean(error)}
-                  onClick={saveField}
-                >
-                  Сохранить
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() =>
-                    draft.length || name.trim()
-                      ? setConfirmCancel(true)
-                      : cancelDrawing()
-                  }
-                >
-                  Отмена
-                </Button>
-              </div>
-            </div>
-          ) : activeField ? (
-            <>
-              <div className="flex items-center justify-between gap-2 px-4 pt-3">
-                <h2 className="text-sm font-medium">{activeField.name}</h2>
-                <Button
-                  variant="ghost"
-                  aria-label="Снять выбор поля"
-                  className="px-2"
-                  onClick={clearActiveField}
-                >
-                  <X aria-hidden="true" className="size-4" />
-                </Button>
-              </div>
-              <div
-                className="flex gap-1 border-b border-slate-200 px-3 pb-2"
-                aria-label="Информация и снимки"
-              >
-                <Button
-                  size="sm"
-                  variant={detailView === "field" ? "secondary" : "ghost"}
-                  aria-pressed={detailView === "field"}
-                  onClick={() => setDetailView("field")}
-                >
-                  О поле
-                </Button>
-                <Button
-                  size="sm"
-                  variant={detailView === "images" ? "secondary" : "ghost"}
-                  aria-pressed={detailView === "images"}
-                  onClick={() => setDetailView("images")}
-                >
-                  Снимки
-                </Button>
-              </div>
-              {detailView === "field" ? (
-                <div className="p-4">
-                  <NavLink
-                    to={DynamicLinks.analytics(activeField.id)}
-                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
-                  >
-                    <ChartSpline aria-hidden="true" className="size-4" />
-                    Открыть аналитику
-                  </NavLink>
-                  <details className="mt-4 text-sm">
-                    <summary className="cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-green-700">
-                      Координаты контура · {activeField.boundary.length} точки
-                    </summary>
-                    <table className="mt-2 w-full text-left text-xs tabular-nums">
-                      <thead className="text-slate-500">
-                        <tr>
-                          <th scope="col" className="py-2 font-normal">
-                            №
-                          </th>
-                          <th scope="col" className="py-2 font-normal">
-                            Широта
-                          </th>
-                          <th scope="col" className="py-2 font-normal">
-                            Долгота
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeField.boundary.map(
-                          ({ latitude, longitude }, index) => (
-                            <tr
-                              key={index}
-                              className="border-t border-slate-100"
-                            >
-                              <td className="py-2">{index + 1}</td>
-                              <td>{latitude}</td>
-                              <td>{longitude}</td>
-                            </tr>
-                          ),
-                        )}
-                      </tbody>
-                    </table>
-                  </details>
-                </div>
-              ) : (
-                <EmptyState
-                  title="Снимков пока нет"
-                  description="Здесь появятся снимки выбранного поля. Анализ станет доступен после подключения сервиса и добавления снимков."
-                />
-              )}
-            </>
-          ) : (
-            <div className="px-4 py-6">
-              <ScanLine
-                aria-hidden="true"
-                className="mb-3 size-5 text-slate-400"
-              />
-              <h2 className="text-sm font-medium">
-                {fields.length ? "Выберите поле" : "Полей пока нет"}
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                {fields.length
-                  ? "Нажмите на контур на карте или на поле в списке, чтобы открыть информацию."
-                  : "Добавьте поле и отметьте точки его контура на карте."}
-              </p>
-              {!fields.length && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-3"
-                  onClick={() => setDrawing(true)}
-                >
-                  Добавить поле
-                </Button>
-              )}
-            </div>
-          )}
-        </section>
+        {drawing ? (
+          <FieldCreationPanel
+            key={`${pointInputMode}-${selectedDraftIndex ?? "new"}`}
+            draft={draft}
+            name={name}
+            nameError={nameError}
+            pointInputMode={pointInputMode}
+            selectedDraftIndex={selectedDraftIndex}
+            boundaryError={draftError}
+            onNameChange={(nextName) => {
+              setName(nextName);
+              if (nameError) {
+                const result = fieldNameSchema.safeParse(nextName);
+                setNameError(
+                  result.success ? undefined : result.error.issues[0]?.message,
+                );
+              }
+            }}
+            onNameBlur={() => {
+              const result = fieldNameSchema.safeParse(name);
+              setNameError(
+                result.success ? undefined : result.error.issues[0]?.message,
+              );
+            }}
+            onPointInputModeChange={(mode) => {
+              setPointInputMode(mode);
+              setSelectedDraftIndex(null);
+            }}
+            onSelectDraftPoint={setSelectedDraftIndex}
+            onAddCoordinate={addCoordinate}
+            onDeletePoint={(index) => {
+              setDraft((current) =>
+                current.filter((_, pointIndex) => pointIndex !== index),
+              );
+              setSelectedDraftIndex(null);
+            }}
+            onRemoveLastPoint={() => {
+              setDraft((current) => current.slice(0, -1));
+              setSelectedDraftIndex(null);
+            }}
+            onResetPoints={() => setConfirmReset(true)}
+            onSave={saveField}
+            onCancel={() =>
+              draft.length || name.trim()
+                ? setConfirmCancel(true)
+                : cancelDrawing()
+            }
+          />
+        ) : (
+          <FieldDetailsPanel
+            fieldsCount={fields.length}
+            field={activeField}
+            detailView={detailView}
+            onDetailViewChange={setDetailView}
+            onClearField={clearActiveField}
+            onStartDrawing={() => setDrawing(true)}
+          />
+        )}
       </Container>
+
       <Dialog
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}

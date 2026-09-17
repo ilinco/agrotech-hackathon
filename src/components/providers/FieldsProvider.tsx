@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { FieldsContext, type NewField } from "@/context/FieldsContext";
 import type { Field } from "@/types/field";
-import { newFieldSchema } from "@/types/fieldValidation";
+import { newFieldSchema } from "@/config/fieldValidation";
 
 export const FieldsProvider = ({ children }: { children: ReactNode }) => {
   const [fields, setFields] = useState<Field[]>([]);

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { GeographicCoordinate } from "./field";
+import type { GeographicCoordinate } from "../types/field";
 
 const coordinateValue = (label: string, min: number, max: number) =>
   z.preprocess(
