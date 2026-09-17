@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { latLngBounds, type Map } from "leaflet";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { latLngBounds, type Map } from 'leaflet';
 import {
   MapContainer,
   Polygon,
@@ -9,24 +9,19 @@ import {
   TileLayer,
   Tooltip,
   useMap,
-} from "react-leaflet";
-import { Crosshair, LocateFixed, Minus, Plus } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Alert } from "@/components/ui/Alert";
-import { createFieldGrid, pointColor } from "./fieldBoundary";
-import type {
-  GeographicCoordinate,
-  Field,
-  MappedFieldPhoto,
-} from "@/types/field";
-import "leaflet/dist/leaflet.css";
+} from 'react-leaflet';
+import { Crosshair, LocateFixed, Minus, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { createFieldGrid, pointColor } from './fieldBoundary';
+import type { GeographicCoordinate, Field } from '@/types/field';
+import 'leaflet/dist/leaflet.css';
 
 type FieldMapProps = {
   field?: Field;
   fields: Field[];
-  mappedPhotos: MappedFieldPhoto[];
   drawing: boolean;
-  pointInputMode: "map" | "coordinates";
+  pointInputMode: 'map' | 'coordinates';
   draft: GeographicCoordinate[];
   onAddPoint: (point: GeographicCoordinate) => void;
   selectedDraftIndex: number | null;
@@ -84,7 +79,6 @@ const DrawingEvents = ({
 export const FieldMap = ({
   field,
   fields,
-  mappedPhotos,
   drawing,
   pointInputMode,
   draft,
@@ -116,17 +110,17 @@ export const FieldMap = ({
   return (
     <section
       aria-label="Карта полей"
-      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border bg-white ${drawing ? "border-green-600" : "border-slate-200"}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border bg-white ${drawing ? 'border-green-600' : 'border-slate-200'}`}
     >
       {drawing && (
         <div className="flex min-h-15 flex-wrap items-center gap-2 border-b border-green-200 bg-green-50 px-4 py-2">
           <Crosshair aria-hidden="true" className="size-5 text-green-800" />
           <p className="py-2 text-sm font-medium text-green-900">
             {selectedDraftIndex === null
-              ? pointInputMode === "map"
+              ? pointInputMode === 'map'
                 ? `Режим рисования · нажмите на карту, чтобы добавить точку ${draft.length + 1}`
-                : "Режим координат · добавляйте точки через форму слева"
-              : pointInputMode === "map"
+                : 'Режим координат · добавляйте точки через форму слева'
+              : pointInputMode === 'map'
                 ? `Редактирование точки ${selectedDraftIndex + 1} · нажмите на новое место`
                 : `Редактирование точки ${selectedDraftIndex + 1} · измените координаты в форме`}
           </p>
@@ -141,18 +135,18 @@ export const FieldMap = ({
           boundsOptions={{ padding: [55, 55] }}
           zoomControl={false}
           scrollWheelZoom
-          className={`z-0 h-full min-h-80 w-full bg-slate-100 ${drawing && pointInputMode === "map" ? "cursor-crosshair" : ""}`}
+          className={`z-0 h-full min-h-80 w-full bg-slate-100 ${drawing && pointInputMode === 'map' ? 'cursor-crosshair' : ''}`}
           aria-label={
-            drawing && pointInputMode === "map"
-              ? "Интерактивная карта в режиме рисования поля. Нажмите на карту, чтобы добавить точку контура."
-              : "Интерактивная карта. Масштаб: кнопки плюс и минус; перемещение: стрелки."
+            drawing && pointInputMode === 'map'
+              ? 'Интерактивная карта в режиме рисования поля. Нажмите на карту, чтобы добавить точку контура.'
+              : 'Интерактивная карта. Масштаб: кнопки плюс и минус; перемещение: стрелки.'
           }
         >
           <TileLayer
             key={tileAttempt}
             url={
               import.meta.env.VITE_MAP_TILE_URL ||
-              "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
             }
             maxZoom={19}
             eventHandlers={{ tileerror: () => setTileError(true) }}
@@ -172,7 +166,7 @@ export const FieldMap = ({
                   bubblingMouseEvents={false}
                   pathOptions={{
                     color:
-                      selected && item.id === field?.id ? "#166534" : "#64748b",
+                      selected && item.id === field?.id ? '#166534' : '#64748b',
                     weight: 2,
                     fillOpacity: 0.12,
                   }}
@@ -183,22 +177,6 @@ export const FieldMap = ({
                   </Tooltip>
                 </Polygon>
               ))}
-          {!drawing &&
-            mappedPhotos.map((photo) => (
-              <CircleMarker
-                key={`photo-${photo.id}`}
-                center={[photo.latitude, photo.longitude]}
-                radius={6}
-                pathOptions={{
-                  color: "#fff",
-                  weight: 2,
-                  fillColor: "#0369a1",
-                  fillOpacity: 1,
-                }}
-              >
-                <Tooltip direction="top">Снимок · {photo.originalName}</Tooltip>
-              </CircleMarker>
-            ))}
           {!drawing &&
             showBoundary &&
             fieldGrids.flatMap(({ fieldId, lines }) =>
@@ -211,14 +189,14 @@ export const FieldMap = ({
                     longitude,
                   ])}
                   pathOptions={{
-                    color: fieldId === field?.id ? "#166534" : "#475569",
+                    color: fieldId === field?.id ? '#166534' : '#475569',
                     weight: 1,
                     opacity: fieldId === field?.id ? 0.55 : 0.35,
                   }}
                 />
               )),
             )}
-          {drawing && pointInputMode === "map" && (
+          {drawing && pointInputMode === 'map' && (
             <DrawingEvents onAddPoint={onAddPoint} />
           )}
           {drawing && draft.length >= 3 && (
@@ -227,7 +205,7 @@ export const FieldMap = ({
                 interactive={false}
                 positions={draft.map((p) => [p.latitude, p.longitude])}
                 pathOptions={{
-                  color: "#166534",
+                  color: '#166534',
                   fillOpacity: 0.16,
                   weight: 2,
                 }}
@@ -240,7 +218,7 @@ export const FieldMap = ({
                     latitude,
                     longitude,
                   ])}
-                  pathOptions={{ color: "#166534", weight: 1, opacity: 0.55 }}
+                  pathOptions={{ color: '#166534', weight: 1, opacity: 0.55 }}
                 />
               ))}
             </>
@@ -249,7 +227,7 @@ export const FieldMap = ({
             <Polyline
               interactive={false}
               positions={draft.map((p) => [p.latitude, p.longitude])}
-              pathOptions={{ color: "#166534", weight: 2 }}
+              pathOptions={{ color: '#166534', weight: 2 }}
             />
           )}
           {(drawing || mapZoom >= FIELD_POINTS_MIN_ZOOM) &&
@@ -263,26 +241,26 @@ export const FieldMap = ({
                 key={index}
                 center={[point.latitude, point.longitude]}
                 radius={8}
-                interactive={drawing && pointInputMode === "map"}
+                interactive={drawing && pointInputMode === 'map'}
                 bubblingMouseEvents={false}
                 pathOptions={{
                   color:
                     drawing && selectedDraftIndex === index
-                      ? "#0f172a"
-                      : "#fff",
+                      ? '#0f172a'
+                      : '#fff',
                   weight: drawing && selectedDraftIndex === index ? 3 : 2,
                   fillColor: pointColor(index),
                   fillOpacity: 1,
                 }}
                 eventHandlers={
-                  drawing && pointInputMode === "map"
+                  drawing && pointInputMode === 'map'
                     ? { click: () => onSelectDraftPoint(index) }
                     : undefined
                 }
               >
                 <Tooltip permanent direction="top">
                   Точка {index + 1}
-                  {drawing && selectedDraftIndex === index ? " · выбрана" : ""}
+                  {drawing && selectedDraftIndex === index ? ' · выбрана' : ''}
                 </Tooltip>
               </CircleMarker>
             ))}

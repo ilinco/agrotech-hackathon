@@ -1,24 +1,25 @@
-import { useState } from "react";
-import { Pencil, RotateCcw, Trash2 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import type { GeographicCoordinate } from "@/types/field";
-import { coordinateFormSchema } from "@/config/fieldValidation";
-import { pointColor } from "../../pages/map/fieldBoundary";
+import { useState } from 'react';
+import { Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import type { GeographicCoordinate } from '@/types/field';
+import { coordinateFormSchema } from '@/config/fieldValidation';
+import { pointColor } from '../../pages/map/fieldBoundary';
 
 type CoordinateErrors = { latitude?: string; longitude?: string };
 
 type FieldCreationPanelProps = {
+  mode?: 'create' | 'edit';
   draft: GeographicCoordinate[];
   name: string;
   nameError?: string;
-  pointInputMode: "map" | "coordinates";
+  pointInputMode: 'map' | 'coordinates';
   selectedDraftIndex: number | null;
   boundaryError?: string;
   onNameChange: (name: string) => void;
   onNameBlur: () => void;
-  onPointInputModeChange: (mode: "map" | "coordinates") => void;
+  onPointInputModeChange: (mode: 'map' | 'coordinates') => void;
   onSelectDraftPoint: (index: number | null) => void;
   onAddCoordinate: (coordinate: GeographicCoordinate) => void;
   onDeletePoint: (index: number) => void;
@@ -30,6 +31,7 @@ type FieldCreationPanelProps = {
 };
 
 export const FieldCreationPanel = ({
+  mode = 'create',
   draft,
   name,
   nameError,
@@ -59,25 +61,36 @@ export const FieldCreationPanel = ({
     >
       <div className="flex flex-col gap-4 p-4">
         <div>
-          <Badge tone="success">Создание контура</Badge>
-          <h2 className="mt-2 text-base font-medium">Новое поле</h2>
+          <Badge tone="success">
+            {mode === 'create' ? 'Создание контура' : 'Редактирование контура'}
+          </Badge>
+          <h2 className="mt-2 text-base font-medium">
+            {mode === 'create' ? 'Новое поле' : name}
+          </h2>
         </div>
         <ol className="space-y-1.5 border-l-2 border-green-200 pl-3 text-sm text-slate-600">
-          <li>1. Укажите название поля.</li>
           <li>
-            2. Добавьте минимум три точки{" "}
-            {pointInputMode === "map" ? "на карте" : "координатами"}.
+            1.{' '}
+            {mode === 'create'
+              ? 'Укажите название поля.'
+              : 'Измените точки контура.'}
+          </li>
+          <li>
+            2. Добавьте минимум три точки{' '}
+            {pointInputMode === 'map' ? 'на карте' : 'координатами'}.
           </li>
           <li>3. Проверьте контур и сохраните поле.</li>
         </ol>
-        <Input
-          label="Название поля"
-          value={name}
-          error={nameError}
-          onChange={(event) => onNameChange(event.target.value)}
-          onBlur={onNameBlur}
-          required
-        />
+        {mode === 'create' && (
+          <Input
+            label="Название поля"
+            value={name}
+            error={nameError}
+            onChange={(event) => onNameChange(event.target.value)}
+            onBlur={onNameBlur}
+            required
+          />
+        )}
         <p className="text-sm text-slate-500">
           Выберите один способ добавления точек. Контур замыкается
           автоматически.
@@ -90,26 +103,26 @@ export const FieldCreationPanel = ({
           <Button
             type="button"
             size="sm"
-            variant={pointInputMode === "map" ? "secondary" : "ghost"}
-            aria-pressed={pointInputMode === "map"}
-            onClick={() => onPointInputModeChange("map")}
+            variant={pointInputMode === 'map' ? 'secondary' : 'ghost'}
+            aria-pressed={pointInputMode === 'map'}
+            onClick={() => onPointInputModeChange('map')}
           >
             На карте
           </Button>
           <Button
             type="button"
             size="sm"
-            variant={pointInputMode === "coordinates" ? "secondary" : "ghost"}
-            aria-pressed={pointInputMode === "coordinates"}
-            onClick={() => onPointInputModeChange("coordinates")}
+            variant={pointInputMode === 'coordinates' ? 'secondary' : 'ghost'}
+            aria-pressed={pointInputMode === 'coordinates'}
+            onClick={() => onPointInputModeChange('coordinates')}
           >
             Координатами
           </Button>
         </div>
         <p className="text-xs text-slate-500">
-          {pointInputMode === "map"
-            ? "Нажмите на карту в нужных местах. Для изменения точки выберите её номер и нажмите на новое место."
-            : "Введите широту и долготу каждой точки. Новая точка добавится в конец списка."}
+          {pointInputMode === 'map'
+            ? 'Нажмите на карту в нужных местах. Для изменения точки выберите её номер и нажмите на новое место.'
+            : 'Введите широту и долготу каждой точки. Новая точка добавится в конец списка.'}
         </p>
         <p role="status" className="text-sm text-slate-600">
           Точек: {draft.length}. {boundaryError}
@@ -118,7 +131,7 @@ export const FieldCreationPanel = ({
           {draft.map((point, index) => (
             <li
               key={index}
-              className={`flex items-center gap-2 rounded-md border p-2 ${selectedDraftIndex === index ? "border-green-700 bg-green-50" : "border-slate-200"}`}
+              className={`flex items-center gap-2 rounded-md border p-2 ${selectedDraftIndex === index ? 'border-green-700 bg-green-50' : 'border-slate-200'}`}
             >
               <svg
                 width="12"
@@ -129,7 +142,7 @@ export const FieldCreationPanel = ({
                 <circle cx="6" cy="6" r="5" fill={pointColor(index)} />
               </svg>
               <span className="min-w-0 flex-1">
-                {index + 1}. Ш: {point.latitude.toFixed(6)} · Д:{" "}
+                {index + 1}. Ш: {point.latitude.toFixed(6)} · Д:{' '}
                 {point.longitude.toFixed(6)}
               </span>
               <Button
@@ -158,23 +171,23 @@ export const FieldCreationPanel = ({
             </li>
           ))}
         </ol>
-        {pointInputMode === "coordinates" && (
+        {pointInputMode === 'coordinates' && (
           <form
-            key={selectedDraftIndex ?? "new-point"}
+            key={selectedDraftIndex ?? 'new-point'}
             className="flex flex-col gap-3"
             noValidate
             onSubmit={(event) => {
               event.preventDefault();
               const values = new FormData(event.currentTarget);
               const result = coordinateFormSchema.safeParse({
-                latitude: values.get("latitude"),
-                longitude: values.get("longitude"),
+                latitude: values.get('latitude'),
+                longitude: values.get('longitude'),
               });
               if (!result.success) {
                 const errors: CoordinateErrors = {};
                 for (const issue of result.error.issues) {
                   const field = issue.path[0];
-                  if (field === "latitude" || field === "longitude")
+                  if (field === 'latitude' || field === 'longitude')
                     errors[field] ??= issue.message;
                 }
                 setCoordinateErrors(errors);
@@ -218,8 +231,8 @@ export const FieldCreationPanel = ({
             </div>
             <Button type="submit" variant="secondary">
               {selectedDraftIndex === null
-                ? "Добавить по координатам"
-                : "Сохранить координаты точки"}
+                ? 'Добавить по координатам'
+                : 'Сохранить координаты точки'}
             </Button>
           </form>
         )}
@@ -247,7 +260,7 @@ export const FieldCreationPanel = ({
             loading={saving}
             onClick={onSave}
           >
-            Сохранить
+            {mode === 'create' ? 'Сохранить' : 'Сохранить контур'}
           </Button>
           <Button variant="ghost" className="w-full" onClick={onCancel}>
             Отмена
