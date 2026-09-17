@@ -1,21 +1,21 @@
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/Badge";
-import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
-import { Dialog } from "@/components/ui/Dialog";
-import { FieldCreationPanel } from "../components/ui/FieldCreationPanel";
-import { FieldDetailsPanel } from "../components/ui/FieldDetailsPanel";
-import { FieldDisplaySettings } from "@/components/ui/FieldDisplaySettings";
-import { FieldsList } from "@/components/ui/FieldsList";
-import { Container } from "@/components/layout/Container";
-import { FieldMap } from "./map/FieldMap";
-import { useFields } from "@/hooks/useFields";
-import type { GeographicCoordinate } from "@/types/field";
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/Badge';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { FieldCreationPanel } from '../components/ui/FieldCreationPanel';
+import { FieldDetailsPanel } from '../components/ui/FieldDetailsPanel';
+import { FieldDisplaySettings } from '@/components/ui/FieldDisplaySettings';
+import { FieldsList } from '@/components/ui/FieldsList';
+import { Container } from '@/components/layout/Container';
+import { FieldMap } from './map/FieldMap';
+import { useFields } from '@/hooks/useFields';
+import type { GeographicCoordinate } from '@/types/field';
 import {
   fieldNameSchema,
   newFieldSchema,
   boundaryError,
-} from "@/config/fieldValidation";
+} from '@/config/fieldValidation';
 
 export const HomePage = () => {
   const {
@@ -23,13 +23,13 @@ export const HomePage = () => {
     activeField,
     activeFieldPhotos,
     availablePhotos,
-    mappedFieldPhotos,
     loading,
     detailLoading,
     mutating,
     error,
     addField,
     renameField,
+    updateFieldBoundary,
     refreshFields,
     refreshPhotos,
     assignPhotos,
@@ -37,56 +37,79 @@ export const HomePage = () => {
     clearActiveField,
   } = useFields();
   const [showBoundary, setShowBoundary] = useState(true);
-  const [detailView, setDetailView] = useState<"field" | "images">("field");
+  const [detailView, setDetailView] = useState<'field' | 'images'>('field');
   const [drawing, setDrawing] = useState(false);
+  const [editingFieldId, setEditingFieldId] = useState<string>();
   const [draft, setDraft] = useState<GeographicCoordinate[]>([]);
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [nameError, setNameError] = useState<string>();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [selectedDraftIndex, setSelectedDraftIndex] = useState<number | null>(
     null,
   );
-  const [pointInputMode, setPointInputMode] = useState<"map" | "coordinates">(
-    "map",
+  const [pointInputMode, setPointInputMode] = useState<'map' | 'coordinates'>(
+    'map',
   );
   const draftError = boundaryError(draft);
 
   useEffect(() => {
     if (!drawing || (!draft.length && !name.trim())) return;
     const preventUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", preventUnload);
-    return () => window.removeEventListener("beforeunload", preventUnload);
+    window.addEventListener('beforeunload', preventUnload);
+    return () => window.removeEventListener('beforeunload', preventUnload);
   }, [drawing, draft.length, name]);
 
   const openField = (fieldId: string) => {
     if (drawing) return;
     selectField(fieldId);
-    setDetailView("field");
+    setDetailView('field');
   };
 
   const cancelDrawing = () => {
     setDrawing(false);
     setDraft([]);
-    setName("");
+    setName('');
     setNameError(undefined);
     setSelectedDraftIndex(null);
-    setPointInputMode("map");
+    setPointInputMode('map');
     setConfirmCancel(false);
+    setEditingFieldId(undefined);
+  };
+
+  const startCreating = () => {
+    setEditingFieldId(undefined);
+    setName('');
+    setDraft([]);
+    setDrawing(true);
+  };
+
+  const startEditing = () => {
+    if (!activeField) return;
+    setEditingFieldId(activeField.id);
+    setName(activeField.name);
+    setDraft(activeField.boundary);
+    setSelectedDraftIndex(null);
+    setPointInputMode('map');
+    setDrawing(true);
   };
 
   const saveField = async () => {
     const result = newFieldSchema.safeParse({ name, boundary: draft });
     if (!result.success) {
       setNameError(
-        result.error.issues.find((issue) => issue.path[0] === "name")?.message,
+        result.error.issues.find((issue) => issue.path[0] === 'name')?.message,
       );
       return;
     }
     try {
-      await addField(result.data);
+      if (editingFieldId) {
+        await updateFieldBoundary(editingFieldId, result.data.boundary);
+      } else {
+        await addField(result.data);
+      }
       setShowBoundary(true);
-      setDetailView("field");
+      setDetailView('field');
       cancelDrawing();
     } catch {
       // The provider exposes the API error above the workspace.
@@ -123,12 +146,16 @@ export const HomePage = () => {
       <Container className="flex shrink-0 flex-wrap items-start justify-between gap-3 py-5">
         <div>
           <h1 className="text-xl font-medium tracking-tight text-slate-900 sm:text-2xl">
-            {drawing ? "Добавление поля" : "Карта полей"}
+            {drawing
+              ? editingFieldId
+                ? 'Редактирование поля'
+                : 'Добавление поля'
+              : 'Карта полей'}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {drawing
-              ? "Отметьте границы поля на карте и сохраните контур."
-              : "Выберите поле, чтобы перейти к снимкам и результатам анализа."}
+              ? 'Отметьте границы поля на карте и сохраните контур.'
+              : 'Выберите поле, чтобы перейти к снимкам и результатам анализа.'}
           </p>
         </div>
         {drawing ? (
@@ -136,7 +163,7 @@ export const HomePage = () => {
             Режим добавления
           </Badge>
         ) : (
-          <Button onClick={() => setDrawing(true)}>Добавить поле</Button>
+          <Button onClick={startCreating}>Добавить поле</Button>
         )}
       </Container>
 
@@ -183,7 +210,6 @@ export const HomePage = () => {
           <FieldMap
             field={activeField}
             fields={fields}
-            mappedPhotos={mappedFieldPhotos}
             drawing={drawing}
             pointInputMode={pointInputMode}
             draft={draft}
@@ -198,7 +224,8 @@ export const HomePage = () => {
 
         {drawing ? (
           <FieldCreationPanel
-            key={`${pointInputMode}-${selectedDraftIndex ?? "new"}`}
+            key={`${pointInputMode}-${selectedDraftIndex ?? 'new'}`}
+            mode={editingFieldId ? 'edit' : 'create'}
             draft={draft}
             name={name}
             nameError={nameError}
@@ -247,13 +274,14 @@ export const HomePage = () => {
           />
         ) : (
           <FieldDetailsPanel
-            key={activeField?.id ?? "no-field"}
+            key={activeField?.id ?? 'no-field'}
             fieldsCount={fields.length}
             field={activeField}
             detailView={detailView}
             onDetailViewChange={setDetailView}
             onClearField={clearActiveField}
-            onStartDrawing={() => setDrawing(true)}
+            onStartDrawing={startCreating}
+            onStartEditing={startEditing}
             photos={activeFieldPhotos}
             availablePhotos={availablePhotos}
             loading={detailLoading}
@@ -268,20 +296,26 @@ export const HomePage = () => {
       <Dialog
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
-        title="Отменить добавление поля?"
+        title={
+          editingFieldId
+            ? 'Отменить редактирование поля?'
+            : 'Отменить добавление поля?'
+        }
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirmCancel(false)}>
               Продолжить рисование
             </Button>
             <Button variant="danger" onClick={cancelDrawing}>
-              Удалить черновик
+              {editingFieldId ? 'Не сохранять' : 'Удалить черновик'}
             </Button>
           </>
         }
       >
         <p className="text-sm text-slate-600">
-          Название и отмеченные точки будут потеряны.
+          {editingFieldId
+            ? 'Изменения контура не будут сохранены.'
+            : 'Название и отмеченные точки будут потеряны.'}
         </p>
       </Dialog>
       <Dialog

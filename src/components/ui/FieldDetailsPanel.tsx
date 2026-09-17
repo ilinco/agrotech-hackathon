@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   ArrowRight,
   ChartSpline,
@@ -7,22 +7,23 @@ import {
   Pencil,
   ScanLine,
   X,
-} from "lucide-react";
-import { NavLink } from "react-router";
-import { Button } from "@/components/ui/Button";
-import { FieldPhotosPanel } from "@/components/ui/FieldPhotosPanel";
-import { Input } from "@/components/ui/Input";
-import { DynamicLinks } from "@/config/DynamicLinks";
-import { fieldNameSchema } from "@/config/fieldValidation";
-import type { Field, FieldPhoto } from "@/types/field";
+} from 'lucide-react';
+import { NavLink } from 'react-router';
+import { Button } from '@/components/ui/Button';
+import { FieldPhotosPanel } from '@/components/ui/FieldPhotosPanel';
+import { Input } from '@/components/ui/Input';
+import { DynamicLinks } from '@/config/DynamicLinks';
+import { fieldNameSchema } from '@/config/fieldValidation';
+import type { Field, FieldPhoto } from '@/types/field';
 
 type FieldDetailsPanelProps = {
   fieldsCount: number;
   field?: Field;
-  detailView: "field" | "images";
-  onDetailViewChange: (view: "field" | "images") => void;
+  detailView: 'field' | 'images';
+  onDetailViewChange: (view: 'field' | 'images') => void;
   onClearField: () => void;
   onStartDrawing: () => void;
+  onStartEditing: () => void;
   photos: FieldPhoto[];
   availablePhotos: FieldPhoto[];
   loading: boolean;
@@ -39,6 +40,7 @@ export const FieldDetailsPanel = ({
   onDetailViewChange,
   onClearField,
   onStartDrawing,
+  onStartEditing,
   photos,
   availablePhotos,
   loading,
@@ -48,7 +50,7 @@ export const FieldDetailsPanel = ({
   onAssignPhotos,
 }: FieldDetailsPanelProps) => {
   const [editingName, setEditingName] = useState(false);
-  const [nextName, setNextName] = useState(field?.name ?? "");
+  const [nextName, setNextName] = useState(field?.name ?? '');
   const [nameError, setNameError] = useState<string>();
 
   return (
@@ -127,30 +129,36 @@ export const FieldDetailsPanel = ({
           >
             <Button
               size="sm"
-              variant={detailView === "field" ? "secondary" : "ghost"}
-              aria-pressed={detailView === "field"}
-              onClick={() => onDetailViewChange("field")}
+              variant={detailView === 'field' ? 'secondary' : 'ghost'}
+              aria-pressed={detailView === 'field'}
+              onClick={() => onDetailViewChange('field')}
             >
               О поле
             </Button>
             <Button
               size="sm"
-              variant={detailView === "images" ? "secondary" : "ghost"}
-              aria-pressed={detailView === "images"}
-              onClick={() => onDetailViewChange("images")}
+              variant={detailView === 'images' ? 'secondary' : 'ghost'}
+              aria-pressed={detailView === 'images'}
+              onClick={() => onDetailViewChange('images')}
             >
               Снимки
             </Button>
           </div>
-          {detailView === "field" ? (
+          {detailView === 'field' ? (
             <div className="p-4">
-              <NavLink
-                to={DynamicLinks.analytics(field.id)}
-                className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
-              >
-                <ChartSpline aria-hidden="true" className="size-4" />
-                Открыть аналитику
-              </NavLink>
+              <div className="grid gap-2">
+                <NavLink
+                  to={DynamicLinks.analytics(field.id)}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                >
+                  <ChartSpline aria-hidden="true" className="size-4" />
+                  Открыть аналитику
+                </NavLink>
+                <Button variant="secondary" onClick={onStartEditing}>
+                  <ScanLine aria-hidden="true" className="size-4" />
+                  Редактировать контур
+                </Button>
+              </div>
               {field.boundary.length ? (
                 <details className="mt-4 text-sm" open>
                   <summary className="cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-green-700">
@@ -209,15 +217,15 @@ export const FieldDetailsPanel = ({
             )}
           </div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-800">
-            {fieldsCount ? "Просмотр поля" : "Начало работы"}
+            {fieldsCount ? 'Просмотр поля' : 'Начало работы'}
           </p>
           <h2 className="text-base font-semibold text-slate-900">
-            {fieldsCount ? "Выберите поле" : "Полей пока нет"}
+            {fieldsCount ? 'Выберите поле' : 'Полей пока нет'}
           </h2>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
             {fieldsCount
-              ? "Нажмите на контур на карте или на поле в списке, чтобы открыть информацию."
-              : "Создайте первое поле, чтобы работать с его контуром, снимками и результатами анализа."}
+              ? 'Нажмите на контур на карте или на поле в списке, чтобы открыть информацию.'
+              : 'Создайте первое поле, чтобы работать с его контуром, снимками и результатами анализа.'}
           </p>
           {!fieldsCount && (
             <>

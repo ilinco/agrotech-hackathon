@@ -21,6 +21,9 @@ export type FieldPhoto = {
   latitude: number | null;
   longitude: number | null;
   altitude: number | null;
+  relativeAltitude?: number | null;
+  gimbalYawDeg?: number | null;
+  focalLength35mm?: number | null;
   createdAt: string;
 };
 
