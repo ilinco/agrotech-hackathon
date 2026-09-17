@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { latLngBounds, type Map } from "leaflet";
 import {
   MapContainer,
@@ -13,7 +13,7 @@ import {
 import { Crosshair, LocateFixed, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { pointColor } from "./fieldBoundary";
+import { createFieldGrid, pointColor } from "./fieldBoundary";
 import type { GeographicCoordinate, Field } from "@/types/field";
 import "leaflet/dist/leaflet.css";
 
@@ -31,6 +31,8 @@ type FieldMapProps = {
   onSelect: (field: Field) => void;
 };
 
+const FIELD_POINTS_MIN_ZOOM = 10;
+
 const ResizeMap = () => {
   const map = useMap();
 
@@ -39,6 +41,16 @@ const ResizeMap = () => {
     observer.observe(map.getContainer());
     return () => observer.disconnect();
   }, [map]);
+
+  return null;
+};
+
+const ZoomObserver = ({ onChange }: { onChange: (zoom: number) => void }) => {
+  const map = useMapEvents({
+    zoomend: () => onChange(map.getZoom()),
+  });
+
+  useEffect(() => onChange(map.getZoom()), [map, onChange]);
 
   return null;
 };
@@ -80,10 +92,20 @@ export const FieldMap = ({
   const mapRef = useRef<Map | null>(null);
   const [tileError, setTileError] = useState(false);
   const [tileAttempt, setTileAttempt] = useState(0);
+  const [mapZoom, setMapZoom] = useState(0);
   const positions = (field?.boundary ?? []).map(
     ({ latitude, longitude }): [number, number] => [latitude, longitude],
   );
   const bounds = positions.length ? latLngBounds(positions) : undefined;
+  const fieldGrids = useMemo(
+    () =>
+      fields.map((item) => ({
+        fieldId: item.id,
+        lines: createFieldGrid(item.boundary),
+      })),
+    [fields],
+  );
+  const draftGrid = useMemo(() => createFieldGrid(draft), [draft]);
 
   return (
     <section
@@ -153,15 +175,51 @@ export const FieldMap = ({
                 </Tooltip>
               </Polygon>
             ))}
+          {!drawing &&
+            showBoundary &&
+            fieldGrids.flatMap(({ fieldId, lines }) =>
+              lines.map((line, index) => (
+                <Polyline
+                  key={`${fieldId}-grid-${index}`}
+                  interactive={false}
+                  positions={line.map(({ latitude, longitude }) => [
+                    latitude,
+                    longitude,
+                  ])}
+                  pathOptions={{
+                    color: fieldId === field?.id ? "#166534" : "#475569",
+                    weight: 1,
+                    opacity: fieldId === field?.id ? 0.55 : 0.35,
+                  }}
+                />
+              )),
+            )}
           {drawing && pointInputMode === "map" && (
             <DrawingEvents onAddPoint={onAddPoint} />
           )}
           {drawing && draft.length >= 3 && (
-            <Polygon
-              interactive={false}
-              positions={draft.map((p) => [p.latitude, p.longitude])}
-              pathOptions={{ color: "#166534", fillOpacity: 0.16, weight: 2 }}
-            />
+            <>
+              <Polygon
+                interactive={false}
+                positions={draft.map((p) => [p.latitude, p.longitude])}
+                pathOptions={{
+                  color: "#166534",
+                  fillOpacity: 0.16,
+                  weight: 2,
+                }}
+              />
+              {draftGrid.map((line, index) => (
+                <Polyline
+                  key={`draft-grid-${index}`}
+                  interactive={false}
+                  positions={line.map(({ latitude, longitude }) => [
+                    latitude,
+                    longitude,
+                  ])}
+                  pathOptions={{ color: "#166534", weight: 1, opacity: 0.55 }}
+                />
+              ))}
+            </>
           )}
           {drawing && draft.length === 2 && (
             <Polyline
@@ -170,37 +228,41 @@ export const FieldMap = ({
               pathOptions={{ color: "#166534", weight: 2 }}
             />
           )}
-          {(drawing
-            ? draft
-            : selected && showBoundary
-              ? (field?.boundary ?? [])
-              : []
-          ).map((point, index) => (
-            <CircleMarker
-              key={index}
-              center={[point.latitude, point.longitude]}
-              radius={8}
-              interactive={drawing && pointInputMode === "map"}
-              bubblingMouseEvents={false}
-              pathOptions={{
-                color:
-                  drawing && selectedDraftIndex === index ? "#0f172a" : "#fff",
-                weight: drawing && selectedDraftIndex === index ? 3 : 2,
-                fillColor: pointColor(index),
-                fillOpacity: 1,
-              }}
-              eventHandlers={
-                drawing && pointInputMode === "map"
-                  ? { click: () => onSelectDraftPoint(index) }
-                  : undefined
-              }
-            >
-              <Tooltip permanent direction="top">
-                Точка {index + 1}
-                {drawing && selectedDraftIndex === index ? " · выбрана" : ""}
-              </Tooltip>
-            </CircleMarker>
-          ))}
+          {(drawing || mapZoom >= FIELD_POINTS_MIN_ZOOM) &&
+            (drawing
+              ? draft
+              : selected && showBoundary
+                ? (field?.boundary ?? [])
+                : []
+            ).map((point, index) => (
+              <CircleMarker
+                key={index}
+                center={[point.latitude, point.longitude]}
+                radius={8}
+                interactive={drawing && pointInputMode === "map"}
+                bubblingMouseEvents={false}
+                pathOptions={{
+                  color:
+                    drawing && selectedDraftIndex === index
+                      ? "#0f172a"
+                      : "#fff",
+                  weight: drawing && selectedDraftIndex === index ? 3 : 2,
+                  fillColor: pointColor(index),
+                  fillOpacity: 1,
+                }}
+                eventHandlers={
+                  drawing && pointInputMode === "map"
+                    ? { click: () => onSelectDraftPoint(index) }
+                    : undefined
+                }
+              >
+                <Tooltip permanent direction="top">
+                  Точка {index + 1}
+                  {drawing && selectedDraftIndex === index ? " · выбрана" : ""}
+                </Tooltip>
+              </CircleMarker>
+            ))}
+          <ZoomObserver onChange={setMapZoom} />
           <ResizeMap />
         </MapContainer>
         <div
@@ -247,6 +309,15 @@ export const FieldMap = ({
             </Button>
           </div>
         </div>
+        {showBoundary && !drawing && fields.length > 0 && (
+          <div className="pointer-events-none absolute bottom-3 left-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-medium text-slate-600 shadow-sm">
+            <span
+              aria-hidden="true"
+              className="size-3 border border-green-700 bg-green-50"
+            />
+            Сетка 2 × 2 км
+          </div>
+        )}
       </div>
       {tileError && (
         <div className="p-3">
