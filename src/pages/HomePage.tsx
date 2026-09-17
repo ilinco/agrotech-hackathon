@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { FieldCreationPanel } from "../components/ui/FieldCreationPanel";
@@ -17,8 +18,24 @@ import {
 } from "@/config/fieldValidation";
 
 export const HomePage = () => {
-  const { fields, activeField, addField, selectField, clearActiveField } =
-    useFields();
+  const {
+    fields,
+    activeField,
+    activeFieldPhotos,
+    availablePhotos,
+    mappedFieldPhotos,
+    loading,
+    detailLoading,
+    mutating,
+    error,
+    addField,
+    renameField,
+    refreshFields,
+    refreshPhotos,
+    assignPhotos,
+    selectField,
+    clearActiveField,
+  } = useFields();
   const [showBoundary, setShowBoundary] = useState(true);
   const [detailView, setDetailView] = useState<"field" | "images">("field");
   const [drawing, setDrawing] = useState(false);
@@ -58,7 +75,7 @@ export const HomePage = () => {
     setConfirmCancel(false);
   };
 
-  const saveField = () => {
+  const saveField = async () => {
     const result = newFieldSchema.safeParse({ name, boundary: draft });
     if (!result.success) {
       setNameError(
@@ -66,10 +83,14 @@ export const HomePage = () => {
       );
       return;
     }
-    addField(result.data);
-    setShowBoundary(true);
-    setDetailView("field");
-    cancelDrawing();
+    try {
+      await addField(result.data);
+      setShowBoundary(true);
+      setDetailView("field");
+      cancelDrawing();
+    } catch {
+      // The provider exposes the API error above the workspace.
+    }
   };
 
   const addDraftPoint = (point: GeographicCoordinate) => {
@@ -119,6 +140,24 @@ export const HomePage = () => {
         )}
       </Container>
 
+      {error && (
+        <Container className="shrink-0 pb-4">
+          <Alert
+            tone="danger"
+            className="flex flex-wrap items-center justify-between gap-3"
+          >
+            <span>{error}</span>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => void refreshFields()}
+            >
+              Повторить
+            </Button>
+          </Alert>
+        </Container>
+      )}
+
       <Container className="grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 sm:pb-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
         {!drawing && (
           <aside
@@ -129,6 +168,7 @@ export const HomePage = () => {
               fields={fields}
               activeFieldId={activeField?.id}
               onSelectField={openField}
+              loading={loading}
             />
             <FieldDisplaySettings
               showBoundary={showBoundary}
@@ -141,6 +181,7 @@ export const HomePage = () => {
           <FieldMap
             field={activeField}
             fields={fields}
+            mappedPhotos={mappedFieldPhotos}
             drawing={drawing}
             pointInputMode={pointInputMode}
             draft={draft}
@@ -195,6 +236,7 @@ export const HomePage = () => {
             }}
             onResetPoints={() => setConfirmReset(true)}
             onSave={saveField}
+            saving={mutating}
             onCancel={() =>
               draft.length || name.trim()
                 ? setConfirmCancel(true)
@@ -203,12 +245,20 @@ export const HomePage = () => {
           />
         ) : (
           <FieldDetailsPanel
+            key={activeField?.id ?? "no-field"}
             fieldsCount={fields.length}
             field={activeField}
             detailView={detailView}
             onDetailViewChange={setDetailView}
             onClearField={clearActiveField}
             onStartDrawing={() => setDrawing(true)}
+            photos={activeFieldPhotos}
+            availablePhotos={availablePhotos}
+            loading={detailLoading}
+            mutating={mutating}
+            onRenameField={renameField}
+            onSyncPhotos={refreshPhotos}
+            onAssignPhotos={assignPhotos}
           />
         )}
       </Container>

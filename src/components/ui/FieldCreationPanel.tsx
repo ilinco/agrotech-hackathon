@@ -26,6 +26,7 @@ type FieldCreationPanelProps = {
   onResetPoints: () => void;
   onSave: () => void;
   onCancel: () => void;
+  saving?: boolean;
 };
 
 export const FieldCreationPanel = ({
@@ -45,6 +46,7 @@ export const FieldCreationPanel = ({
   onResetPoints,
   onSave,
   onCancel,
+  saving = false,
 }: FieldCreationPanelProps) => {
   const [coordinateErrors, setCoordinateErrors] = useState<CoordinateErrors>(
     {},
@@ -242,6 +244,7 @@ export const FieldCreationPanel = ({
           <Button
             className="w-full"
             disabled={Boolean(boundaryError)}
+            loading={saving}
             onClick={onSave}
           >
             Сохранить

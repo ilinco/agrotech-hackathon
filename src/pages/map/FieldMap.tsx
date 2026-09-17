@@ -14,12 +14,17 @@ import { Crosshair, LocateFixed, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { createFieldGrid, pointColor } from "./fieldBoundary";
-import type { GeographicCoordinate, Field } from "@/types/field";
+import type {
+  GeographicCoordinate,
+  Field,
+  MappedFieldPhoto,
+} from "@/types/field";
 import "leaflet/dist/leaflet.css";
 
 type FieldMapProps = {
   field?: Field;
   fields: Field[];
+  mappedPhotos: MappedFieldPhoto[];
   drawing: boolean;
   pointInputMode: "map" | "coordinates";
   draft: GeographicCoordinate[];
@@ -79,6 +84,7 @@ const DrawingEvents = ({
 export const FieldMap = ({
   field,
   fields,
+  mappedPhotos,
   drawing,
   pointInputMode,
   draft,
@@ -153,27 +159,45 @@ export const FieldMap = ({
           />
           {!drawing &&
             showBoundary &&
-            fields.map((item) => (
-              <Polygon
-                key={item.id}
-                positions={item.boundary.map(({ latitude, longitude }) => [
-                  latitude,
-                  longitude,
-                ])}
-                interactive={!drawing}
-                bubblingMouseEvents={false}
+            fields
+              .filter((item) => item.boundary.length >= 3)
+              .map((item) => (
+                <Polygon
+                  key={item.id}
+                  positions={item.boundary.map(({ latitude, longitude }) => [
+                    latitude,
+                    longitude,
+                  ])}
+                  interactive={!drawing}
+                  bubblingMouseEvents={false}
+                  pathOptions={{
+                    color:
+                      selected && item.id === field?.id ? "#166534" : "#64748b",
+                    weight: 2,
+                    fillOpacity: 0.12,
+                  }}
+                  eventHandlers={{ click: () => onSelect(item) }}
+                >
+                  <Tooltip permanent direction="center">
+                    {item.name}
+                  </Tooltip>
+                </Polygon>
+              ))}
+          {!drawing &&
+            mappedPhotos.map((photo) => (
+              <CircleMarker
+                key={`photo-${photo.id}`}
+                center={[photo.latitude, photo.longitude]}
+                radius={6}
                 pathOptions={{
-                  color:
-                    selected && item.id === field?.id ? "#166534" : "#64748b",
+                  color: "#fff",
                   weight: 2,
-                  fillOpacity: 0.12,
+                  fillColor: "#0369a1",
+                  fillOpacity: 1,
                 }}
-                eventHandlers={{ click: () => onSelect(item) }}
               >
-                <Tooltip permanent direction="center">
-                  {item.name}
-                </Tooltip>
-              </Polygon>
+                <Tooltip direction="top">Снимок · {photo.originalName}</Tooltip>
+              </CircleMarker>
             ))}
           {!drawing &&
             showBoundary &&

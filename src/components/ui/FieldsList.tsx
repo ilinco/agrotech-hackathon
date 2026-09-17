@@ -1,16 +1,19 @@
 import { ChevronRight, MapPinned, Sprout } from "lucide-react";
+import { Loader } from "@/components/ui/Loader";
 import type { Field } from "@/types/field";
 
 type FieldsListProps = {
   fields: Field[];
   activeFieldId?: string;
   onSelectField: (fieldId: string) => void;
+  loading?: boolean;
 };
 
 export const FieldsList = ({
   fields,
   activeFieldId,
   onSelectField,
+  loading = false,
 }: FieldsListProps) => {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto border-b border-slate-200 p-4">
@@ -20,7 +23,11 @@ export const FieldsList = ({
           {fields.length}
         </span>
       </div>
-      {fields.length ? (
+      {loading ? (
+        <div className="py-8">
+          <Loader label="Загружаем поля…" />
+        </div>
+      ) : fields.length ? (
         <div className="flex flex-col gap-2">
           {fields.map((field) => (
             <button
@@ -37,6 +44,9 @@ export const FieldsList = ({
               <span className="min-w-0 flex-1">
                 <span className="block wrap-break-word text-sm font-medium">
                   {field.name}
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  Снимков: {field.photosCount}
                 </span>
               </span>
               <ChevronRight
