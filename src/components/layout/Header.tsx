@@ -1,6 +1,6 @@
 import { NavLink } from "react-router";
 import { Container } from "@/components/layout/Container";
-import { navigationItems } from "@/config/Navigation";
+import { navigationItems } from "@/routing/Navigation";
 
 export const Header = () => (
   <header className="border-b border-slate-200 bg-white sticky top-0 z-1000">

@@ -9,7 +9,7 @@ export const FieldDisplaySettings = ({
   showBoundary,
   onShowBoundaryChange,
 }: FieldDisplaySettingsProps) => (
-  <div className="border-t border-slate-200 px-4 py-3">
+  <div className="bg-slate-50/50 px-4 py-3">
     <Checkbox
       label="Показывать контур поля"
       checked={showBoundary}

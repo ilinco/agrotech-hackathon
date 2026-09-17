@@ -1,4 +1,11 @@
-import { ChartSpline, ScanLine, X } from "lucide-react";
+import {
+  ArrowRight,
+  ChartSpline,
+  Map,
+  MousePointer2,
+  ScanLine,
+  X,
+} from "lucide-react";
 import { NavLink } from "react-router";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -107,25 +114,45 @@ export const FieldDetailsPanel = ({
         )}
       </>
     ) : (
-      <div className="px-4 py-6">
-        <ScanLine aria-hidden="true" className="mb-3 size-5 text-slate-400" />
-        <h2 className="text-sm font-medium">
+      <div className="px-4 py-5">
+        <div className="mb-4 flex size-11 items-center justify-center rounded-lg border border-green-100 bg-green-50 text-green-800">
+          {fieldsCount ? (
+            <MousePointer2 aria-hidden="true" className="size-5" />
+          ) : (
+            <ScanLine aria-hidden="true" className="size-5" />
+          )}
+        </div>
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-800">
+          {fieldsCount ? "Просмотр поля" : "Начало работы"}
+        </p>
+        <h2 className="text-base font-semibold text-slate-900">
           {fieldsCount ? "Выберите поле" : "Полей пока нет"}
         </h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
           {fieldsCount
             ? "Нажмите на контур на карте или на поле в списке, чтобы открыть информацию."
-            : "Добавьте поле и отметьте точки его контура на карте."}
+            : "Создайте первое поле, чтобы работать с его контуром, снимками и результатами анализа."}
         </p>
         {!fieldsCount && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="mt-3"
-            onClick={onStartDrawing}
-          >
-            Добавить поле
-          </Button>
+          <>
+            <div className="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-3 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              <span className="flex size-6 items-center justify-center rounded-full bg-white font-semibold text-green-800 shadow-sm">
+                1
+              </span>
+              <span className="self-center">Отметьте контур на карте</span>
+              <span className="flex size-6 items-center justify-center rounded-full bg-white font-semibold text-green-800 shadow-sm">
+                2
+              </span>
+              <span className="self-center">
+                Сохраните поле и добавьте снимки
+              </span>
+            </div>
+            <Button className="mt-4 w-full" onClick={onStartDrawing}>
+              <Map aria-hidden="true" className="size-4" />
+              Добавить первое поле
+              <ArrowRight aria-hidden="true" className="ml-auto size-4" />
+            </Button>
+          </>
         )}
       </div>
     )}

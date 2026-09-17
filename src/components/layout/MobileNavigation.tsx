@@ -1,5 +1,5 @@
 import { NavLink } from "react-router";
-import { navigationItems } from "@/config/Navigation";
+import { navigationItems } from "@/routing/Navigation";
 
 export const MobileNavigation = () => {
   return (
