@@ -3,6 +3,9 @@ import { latLngBounds, type Map } from "leaflet";
 import {
   MapContainer,
   Polygon,
+  Polyline,
+  CircleMarker,
+  useMapEvents,
   TileLayer,
   Tooltip,
   useMap,
@@ -10,14 +13,21 @@ import {
 import { LocateFixed, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import type { Field } from "@/types/field";
+import { pointColor } from "./fieldBoundary";
+import type { GeographicCoordinate, Field } from "@/types/field";
 import "leaflet/dist/leaflet.css";
 
 type FieldMapProps = {
-  field: Field;
+  field?: Field;
+  fields: Field[];
+  drawing: boolean;
+  draft: GeographicCoordinate[];
+  onAddPoint: (point: GeographicCoordinate) => void;
+  selectedDraftIndex: number | null;
+  onSelectDraftPoint: (index: number) => void;
   selected: boolean;
   showBoundary: boolean;
-  onSelect: () => void;
+  onSelect: (field: Field) => void;
 };
 
 const ResizeMap = () => {
@@ -32,8 +42,35 @@ const ResizeMap = () => {
   return null;
 };
 
+const DrawingEvents = ({
+  onAddPoint,
+}: {
+  onAddPoint: (point: GeographicCoordinate) => void;
+}) => {
+  const map = useMapEvents({
+    click: (event) => {
+      const coordinate = event.latlng.wrap();
+      onAddPoint({ latitude: coordinate.lat, longitude: coordinate.lng });
+    },
+  });
+  useEffect(() => {
+    const enabled = map.doubleClickZoom.enabled();
+    map.doubleClickZoom.disable();
+    return () => {
+      if (enabled) map.doubleClickZoom.enable();
+    };
+  }, [map]);
+  return null;
+};
+
 export const FieldMap = ({
   field,
+  fields,
+  drawing,
+  draft,
+  onAddPoint,
+  selectedDraftIndex,
+  onSelectDraftPoint,
   selected,
   showBoundary,
   onSelect,
@@ -41,40 +78,30 @@ export const FieldMap = ({
   const mapRef = useRef<Map | null>(null);
   const [tileError, setTileError] = useState(false);
   const [tileAttempt, setTileAttempt] = useState(0);
-  const positions = field.boundary.map(
+  const positions = (field?.boundary ?? []).map(
     ({ latitude, longitude }): [number, number] => [latitude, longitude],
   );
-  const bounds = latLngBounds(positions);
+  const bounds = positions.length ? latLngBounds(positions) : undefined;
 
   return (
     <section
       aria-label="Карта полей"
       className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
-        <span className="flex items-center gap-2 text-xs text-slate-600">
-          <span
-            aria-hidden="true"
-            className="size-2 rounded-full bg-green-700"
-          />
-          {showBoundary ? "Контур поля" : "Контур скрыт"}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            mapRef.current?.fitBounds(bounds, {
-              padding: [40, 40],
-              animate: false,
-            })
-          }
-        >
-          <LocateFixed aria-hidden="true" className="size-4" />К полю
-        </Button>
-      </div>
+      {drawing && (
+        <div className="flex min-h-15 flex-wrap items-center justify-end gap-2 border-b border-slate-200 px-3 py-2">
+          <p className="py-2 text-lg text-slate-600">
+            {selectedDraftIndex === null
+              ? "Клик по карте добавляет точку"
+              : `Выбрана точка ${selectedDraftIndex + 1}. Клик по карте переместит её`}
+          </p>
+        </div>
+      )}
       <div className="relative isolate min-h-80 flex-1">
         <MapContainer
           ref={mapRef}
+          center={bounds ? undefined : [53.2, 63.7]}
+          zoom={bounds ? undefined : 9}
           bounds={bounds}
           boundsOptions={{ padding: [55, 55] }}
           zoomControl={false}
@@ -88,54 +115,122 @@ export const FieldMap = ({
               import.meta.env.VITE_MAP_TILE_URL ||
               "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             }
-            attribution={
-              import.meta.env.VITE_MAP_ATTRIBUTION ||
-              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }
             maxZoom={19}
             eventHandlers={{ tileerror: () => setTileError(true) }}
           />
-          {showBoundary && (
+          {!drawing &&
+            showBoundary &&
+            fields.map((item) => (
+              <Polygon
+                key={item.id}
+                positions={item.boundary.map(({ latitude, longitude }) => [
+                  latitude,
+                  longitude,
+                ])}
+                interactive={!drawing}
+                bubblingMouseEvents={false}
+                pathOptions={{
+                  color:
+                    selected && item.id === field?.id ? "#166534" : "#64748b",
+                  weight: 2,
+                  fillOpacity: 0.12,
+                }}
+                eventHandlers={{ click: () => onSelect(item) }}
+              >
+                <Tooltip permanent direction="center">
+                  {item.name}
+                </Tooltip>
+              </Polygon>
+            ))}
+          {drawing && <DrawingEvents onAddPoint={onAddPoint} />}
+          {drawing && draft.length >= 3 && (
             <Polygon
-              positions={positions}
-              pathOptions={{
-                color: selected ? "#166534" : "#64748b",
-                weight: selected ? 3 : 2,
-                fillOpacity: selected ? 0.16 : 0.08,
-              }}
-              eventHandlers={{ click: onSelect }}
-            >
-              <Tooltip permanent direction="center">
-                {field.name}
-              </Tooltip>
-            </Polygon>
+              interactive={false}
+              positions={draft.map((p) => [p.latitude, p.longitude])}
+              pathOptions={{ color: "#166534", fillOpacity: 0.16, weight: 2 }}
+            />
           )}
+          {drawing && draft.length === 2 && (
+            <Polyline
+              interactive={false}
+              positions={draft.map((p) => [p.latitude, p.longitude])}
+              pathOptions={{ color: "#166534", weight: 2 }}
+            />
+          )}
+          {(drawing
+            ? draft
+            : selected && showBoundary
+              ? (field?.boundary ?? [])
+              : []
+          ).map((point, index) => (
+            <CircleMarker
+              key={index}
+              center={[point.latitude, point.longitude]}
+              radius={8}
+              interactive={drawing}
+              bubblingMouseEvents={false}
+              pathOptions={{
+                color:
+                  drawing && selectedDraftIndex === index ? "#0f172a" : "#fff",
+                weight: drawing && selectedDraftIndex === index ? 3 : 2,
+                fillColor: pointColor(index),
+                fillOpacity: 1,
+              }}
+              eventHandlers={
+                drawing ? { click: () => onSelectDraftPoint(index) } : undefined
+              }
+            >
+              <Tooltip permanent direction="top">
+                Точка {index + 1}
+                {drawing && selectedDraftIndex === index ? " · выбрана" : ""}
+              </Tooltip>
+            </CircleMarker>
+          ))}
           <ResizeMap />
         </MapContainer>
         <div
-          className="absolute right-3 top-3 flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-1"
-          aria-label="Масштаб карты"
+          className="absolute right-3 top-3 flex flex-col items-end gap-2"
+          aria-label="Управление картой"
         >
-          <Button
-            variant="ghost"
-            aria-label="Приблизить карту"
-            className="min-h-11 px-3"
-            onClick={() =>
-              mapRef.current?.zoomIn(undefined, { animate: false })
-            }
+          {!drawing && field && bounds && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                mapRef.current?.fitBounds(bounds, {
+                  padding: [40, 40],
+                  animate: false,
+                })
+              }
+            >
+              <LocateFixed aria-hidden="true" className="size-4" />К полю
+            </Button>
+          )}
+          <div
+            className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-white p-1"
+            aria-label="Масштаб карты"
           >
-            <Plus aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            aria-label="Отдалить карту"
-            className="min-h-11 px-3"
-            onClick={() =>
-              mapRef.current?.zoomOut(undefined, { animate: false })
-            }
-          >
-            <Minus aria-hidden="true" className="size-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              aria-label="Приблизить карту"
+              className="min-h-11 px-3"
+              onClick={() =>
+                mapRef.current?.zoomIn(undefined, { animate: false })
+              }
+            >
+              <Plus aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              aria-label="Отдалить карту"
+              className="min-h-11 px-3"
+              onClick={() =>
+                mapRef.current?.zoomOut(undefined, { animate: false })
+              }
+            >
+              <Minus aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
         </div>
       </div>
       {tileError && (

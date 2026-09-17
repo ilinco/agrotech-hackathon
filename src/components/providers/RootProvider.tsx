@@ -1,6 +1,11 @@
 import router from "@/routing/Routes";
 import { RouterProvider } from "react-router";
+import { FieldsProvider } from "./FieldsProvider";
 
 export const RootProvider = () => {
-  return <RouterProvider router={router} />;
+  return (
+    <FieldsProvider>
+      <RouterProvider router={router} />
+    </FieldsProvider>
+  );
 };
