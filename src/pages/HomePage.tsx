@@ -70,15 +70,21 @@ export const HomePage = () => {
       <Container className="flex shrink-0 flex-wrap items-start justify-between gap-3 py-5">
         <div>
           <h1 className="text-xl font-medium tracking-tight text-slate-900 sm:text-2xl">
-            Карта полей
+            {drawing ? "Добавление поля" : "Карта полей"}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Выберите поле, чтобы перейти к снимкам и результатам анализа.
+            {drawing
+              ? "Отметьте границы поля на карте и сохраните контур."
+              : "Выберите поле, чтобы перейти к снимкам и результатам анализа."}
           </p>
         </div>
-        <Button disabled={drawing} onClick={() => setDrawing(true)}>
-          Добавить поле
-        </Button>
+        {drawing ? (
+          <Badge tone="success" className="mt-1 px-3 py-1.5">
+            Режим добавления
+          </Badge>
+        ) : (
+          <Button onClick={() => setDrawing(true)}>Добавить поле</Button>
+        )}
       </Container>
 
       <Container className="grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 sm:pb-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
@@ -161,12 +167,20 @@ export const HomePage = () => {
         </div>
 
         <section
-          aria-label="Информация о поле"
-          className="min-h-0 rounded-lg border border-slate-200 bg-white lg:col-start-1 lg:overflow-y-auto"
+          aria-label={drawing ? "Добавление поля" : "Информация о поле"}
+          className={`min-h-0 rounded-lg border bg-white lg:col-start-1 lg:overflow-y-auto ${drawing ? "border-green-600" : "border-slate-200"}`}
         >
           {drawing ? (
             <div className="flex flex-col gap-4 p-4">
-              <h2 className="text-sm font-medium">Новое поле</h2>
+              <div>
+                <Badge tone="success">Создание контура</Badge>
+                <h2 className="mt-2 text-base font-medium">Новое поле</h2>
+              </div>
+              <ol className="space-y-1.5 border-l-2 border-green-200 pl-3 text-sm text-slate-600">
+                <li>1. Укажите название поля.</li>
+                <li>2. Поставьте минимум три точки на карте.</li>
+                <li>3. Проверьте контур и сохраните поле.</li>
+              </ol>
               <Input
                 label="Название поля"
                 value={name}
@@ -174,8 +188,7 @@ export const HomePage = () => {
                 required
               />
               <p className="text-sm text-slate-500">
-                Отмечайте точки по порядку вдоль границы. Контур замыкается
-                автоматически. Количество точек не ограничено.
+                Точки соединяются по порядку, контур замыкается автоматически.
               </p>
               <p role="status" className="text-sm text-slate-600">
                 Точек: {draft.length}. {error}

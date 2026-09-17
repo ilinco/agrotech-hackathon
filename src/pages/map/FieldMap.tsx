@@ -10,7 +10,7 @@ import {
   Tooltip,
   useMap,
 } from "react-leaflet";
-import { LocateFixed, Minus, Plus } from "lucide-react";
+import { Crosshair, LocateFixed, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { pointColor } from "./fieldBoundary";
@@ -86,14 +86,15 @@ export const FieldMap = ({
   return (
     <section
       aria-label="Карта полей"
-      className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white"
+      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border bg-white ${drawing ? "border-green-600" : "border-slate-200"}`}
     >
       {drawing && (
-        <div className="flex min-h-15 flex-wrap items-center justify-end gap-2 border-b border-slate-200 px-3 py-2">
-          <p className="py-2 text-lg text-slate-600">
+        <div className="flex min-h-15 flex-wrap items-center gap-2 border-b border-green-200 bg-green-50 px-4 py-2">
+          <Crosshair aria-hidden="true" className="size-5 text-green-800" />
+          <p className="py-2 text-sm font-medium text-green-900">
             {selectedDraftIndex === null
-              ? "Клик по карте добавляет точку"
-              : `Выбрана точка ${selectedDraftIndex + 1}. Клик по карте переместит её`}
+              ? `Режим рисования · нажмите на карту, чтобы добавить точку ${draft.length + 1}`
+              : `Редактирование точки ${selectedDraftIndex + 1} · нажмите на новое место`}
           </p>
         </div>
       )}
@@ -106,8 +107,12 @@ export const FieldMap = ({
           boundsOptions={{ padding: [55, 55] }}
           zoomControl={false}
           scrollWheelZoom
-          className="z-0 h-full min-h-80 w-full bg-slate-100"
-          aria-label="Интерактивная карта. Масштаб: кнопки плюс и минус; перемещение: стрелки."
+          className={`z-0 h-full min-h-80 w-full bg-slate-100 ${drawing ? "cursor-crosshair" : ""}`}
+          aria-label={
+            drawing
+              ? "Интерактивная карта в режиме рисования поля. Нажмите на карту, чтобы добавить точку контура."
+              : "Интерактивная карта. Масштаб: кнопки плюс и минус; перемещение: стрелки."
+          }
         >
           <TileLayer
             key={tileAttempt}
