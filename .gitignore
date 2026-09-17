@@ -1,0 +1,42 @@
+# Dependencies and package manager caches
+node_modules/
+.pnpm-store/
+
+# Build output and caches
+dist/
+dist-ssr/
+.vite/
+.cache/
+*.tsbuildinfo
+.eslintcache
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Environment files (keep the shared template)
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+logs/
+*.log
+
+# Editor files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
