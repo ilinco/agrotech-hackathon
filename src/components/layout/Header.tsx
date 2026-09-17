@@ -6,10 +6,16 @@ export const Header = () => (
   <header className="border-b border-slate-200 bg-white">
     <Container>
       <div className="flex min-h-16 items-center justify-between gap-6">
-        <NavLink to="/" className="text-lg font-semibold tracking-tight text-green-800">
-          agrotech
+        <NavLink
+          to="/"
+          className="text-lg font-semibold tracking-tight text-green-800"
+        >
+          agrotech.
         </NavLink>
-        <nav aria-label="Основная навигация" className="hidden items-center gap-1 md:flex">
+        <nav
+          aria-label="Основная навигация"
+          className="hidden items-center gap-1 md:flex"
+        >
           {navigationItems.map(({ to, label, end }) => (
             <NavLink
               key={to}

@@ -4,9 +4,9 @@ import {
   ChevronRight,
   MapPinned,
   ScanLine,
-  Sprout,
   X,
 } from "lucide-react";
+import { Container } from "@/components/layout/Container";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -23,21 +23,7 @@ export const HomePage = () => {
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50 lg:h-dvh">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
-        <a
-          href="/"
-          className="flex items-center gap-2 text-sm font-semibold text-slate-900 focus-visible:outline-2 focus-visible:outline-green-700"
-        >
-          <Sprout aria-hidden="true" className="size-5 text-green-800" />
-          Агромониторинг
-        </a>
-        <span className="flex items-center gap-2 text-sm text-green-800">
-          <MapPinned aria-hidden="true" className="size-4" />
-          Карта полей
-        </span>
-      </header>
-
-      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 px-4 py-5 sm:px-6">
+      <Container className="flex shrink-0 flex-wrap items-start justify-between gap-3 py-5">
         <div>
           <h1 className="text-xl font-medium tracking-tight text-slate-900 sm:text-2xl">
             Карта полей
@@ -46,10 +32,9 @@ export const HomePage = () => {
             Выберите поле, чтобы перейти к снимкам и результатам анализа.
           </p>
         </div>
-        <Badge className="mt-1">Демонстрационный режим</Badge>
-      </div>
+      </Container>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-4 pb-4 sm:px-6 sm:pb-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
+      <Container className="grid min-h-0 flex-1 grid-cols-1 gap-4 pb-4 sm:pb-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
         <aside
           aria-label="Поля и настройки"
           className="flex min-h-0 flex-col rounded-lg border border-slate-200 bg-white lg:overflow-y-auto"
@@ -215,7 +200,7 @@ export const HomePage = () => {
             </div>
           )}
         </section>
-      </div>
+      </Container>
     </div>
   );
 };

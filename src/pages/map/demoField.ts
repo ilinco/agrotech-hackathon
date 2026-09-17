@@ -1,6 +1,5 @@
 import type { Field } from "@/types/field";
 
-// Synthetic geometry for the map prototype, not a surveyed agricultural field.
 export const demoField: Field = {
   id: "demo-field",
   name: "Тестовое поле",

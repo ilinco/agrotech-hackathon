@@ -41,7 +41,6 @@ export const FieldMap = ({
   const mapRef = useRef<Map | null>(null);
   const [tileError, setTileError] = useState(false);
   const [tileAttempt, setTileAttempt] = useState(0);
-  // Leaflet takes latitude first; the domain model keeps both names explicit.
   const positions = field.boundary.map(
     ({ latitude, longitude }): [number, number] => [latitude, longitude],
   );
