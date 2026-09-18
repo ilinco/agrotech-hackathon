@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { BarChart3, Download, Play, RefreshCw } from 'lucide-react';
 import {
@@ -34,6 +34,12 @@ import type {
 import type { FieldPhoto } from '@/types/field';
 
 const activeStatuses = new Set<AnalysisRun['status']>(['PENDING', 'RUNNING']);
+
+const AggregateCharts = lazy(() =>
+  import('@/pages/analytics/charts/AggregateCharts').then((module) => ({
+    default: module.AggregateCharts,
+  })),
+);
 
 export const AnalyticsPage = () => {
   const { fields, activeField, loading: fieldsLoading } = useFields();
@@ -436,34 +442,47 @@ export const AnalyticsPage = () => {
             </section>
           </aside>
 
-          <main className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
-            {run ? (
-              <AnalysisResult
-                field={field}
-                run={run}
-                map={analysisMap}
-                selectedDetectionId={selectedDetectionId}
-                downloading={downloading}
-                onSelectDetection={setSelectedDetectionId}
-                onDownload={(kind) =>
-                  void performDownload(() =>
-                    kind === 'pdf'
-                      ? downloadRunReport(run.id)
-                      : downloadRunExport(run.id, kind),
-                  )
+          <main className="min-w-0 space-y-5">
+            {aggregate && (
+              <Suspense
+                fallback={
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <Loader label="Загружаем диаграммы…" />
+                  </div>
                 }
-                onDownloadAnnotated={(photoId) =>
-                  void performDownload(() =>
-                    downloadAnnotatedPhoto(run.id, photoId),
-                  )
-                }
-              />
-            ) : (
-              <EmptyState
-                title="Выберите или запустите анализ"
-                description="Результаты, карта обнаружений и рекомендации появятся в этой области."
-              />
+              >
+                <AggregateCharts report={aggregate} />
+              </Suspense>
             )}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
+              {run ? (
+                <AnalysisResult
+                  field={field}
+                  run={run}
+                  map={analysisMap}
+                  selectedDetectionId={selectedDetectionId}
+                  downloading={downloading}
+                  onSelectDetection={setSelectedDetectionId}
+                  onDownload={(kind) =>
+                    void performDownload(() =>
+                      kind === 'pdf'
+                        ? downloadRunReport(run.id)
+                        : downloadRunExport(run.id, kind),
+                    )
+                  }
+                  onDownloadAnnotated={(photoId) =>
+                    void performDownload(() =>
+                      downloadAnnotatedPhoto(run.id, photoId),
+                    )
+                  }
+                />
+              ) : (
+                <EmptyState
+                  title="Выберите или запустите анализ"
+                  description="Результаты, карта обнаружений и рекомендации появятся в этой области."
+                />
+              )}
+            </div>
           </main>
         </div>
       )}
