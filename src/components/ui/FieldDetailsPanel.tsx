@@ -85,7 +85,7 @@ export const FieldDetailsPanel = ({
             </div>
             {editingName && (
               <form
-                className="mt-3 space-y-2 border-t border-slate-100 pt-3"
+                className="mt-3 space-y-2 border-t border-slate-100 py-3"
                 onSubmit={(event) => {
                   event.preventDefault();
                   const result = fieldNameSchema.safeParse(nextName);
@@ -107,13 +107,19 @@ export const FieldDetailsPanel = ({
                     setNameError(undefined);
                   }}
                 />
-                <div className="flex gap-2">
-                  <Button type="submit" size="sm" loading={mutating}>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="w-full"
+                    loading={mutating}
+                  >
                     Сохранить
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="w-full"
                     onClick={() => setEditingName(false)}
                   >
                     Отмена
@@ -161,15 +167,20 @@ export const FieldDetailsPanel = ({
               {field.boundary.length ? (
                 <details className="mt-4 text-sm" open>
                   <summary className="cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-green-700">
-                    Координаты контура · {field.boundary.length} точки
+                    Координаты контура · {field.boundary.length} точек
                   </summary>
-                  <table className="mt-2 w-full text-left text-xs tabular-nums">
+                  <table className="mt-2 w-full table-fixed text-left text-xs tabular-nums">
+                    <colgroup>
+                      <col className="w-8" />
+                      <col />
+                      <col />
+                    </colgroup>
                     <thead className="text-slate-500">
                       <tr>
-                        <th scope="col" className="py-2 font-normal">
+                        <th scope="col" className="py-2 pr-2 font-normal">
                           №
                         </th>
-                        <th scope="col" className="py-2 font-normal">
+                        <th scope="col" className="py-2 pr-2 font-normal">
                           Широта
                         </th>
                         <th scope="col" className="py-2 font-normal">
@@ -180,9 +191,9 @@ export const FieldDetailsPanel = ({
                     <tbody>
                       {field.boundary.map(({ latitude, longitude }, index) => (
                         <tr key={index} className="border-t border-slate-100">
-                          <td className="py-2">{index + 1}</td>
-                          <td>{latitude}</td>
-                          <td>{longitude}</td>
+                          <td className="py-2 pr-2">{index + 1}</td>
+                          <td className="pr-2">{latitude.toFixed(6)}</td>
+                          <td>{longitude.toFixed(6)}</td>
                         </tr>
                       ))}
                     </tbody>

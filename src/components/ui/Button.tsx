@@ -31,17 +31,19 @@ export const Button = ({
       aria-busy={loading || undefined}
       className={`relative inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none ${variants[variant]} ${size === "sm" ? "min-h-9 px-3 py-1.5" : "min-h-10 px-4 py-2"} ${className}`}
     >
-      {loading && (
-        <span
-          aria-hidden="true"
-          className="absolute size-4 animate-spin rounded-full border-2 border-current border-r-transparent [animation-duration:700ms] motion-reduce:animate-none"
-        />
+      {loading ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="absolute size-4 animate-spin rounded-full border-2 border-current border-r-transparent [animation-duration:700ms] motion-reduce:animate-none"
+          />
+          <span className="inline-flex w-full items-center justify-center gap-2 opacity-0">
+            {children}
+          </span>
+        </>
+      ) : (
+        children
       )}
-      <span
-        className={`inline-flex w-full items-center justify-center gap-2 transition-opacity duration-200 motion-reduce:transition-none ${loading ? "opacity-0" : "opacity-100"}`}
-      >
-        {children}
-      </span>
     </button>
   );
 };
