@@ -242,7 +242,7 @@ export const AnalysisResult = ({
                       type="button"
                       aria-pressed={selectedDetectionId === detection.id}
                       onClick={() => onSelectDetection(detection.id)}
-                      className={`w-full rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-green-700 ${selectedDetectionId === detection.id ? 'border-green-700 bg-green-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                      className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-green-700 ${selectedDetectionId === detection.id ? 'border-green-700 bg-green-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-medium">

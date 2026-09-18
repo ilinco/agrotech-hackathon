@@ -3,7 +3,6 @@ import {
   ArrowRight,
   ChartSpline,
   Map,
-  MousePointer2,
   Pencil,
   ScanLine,
   X,
@@ -86,7 +85,7 @@ export const FieldDetailsPanel = ({
             </div>
             {editingName && (
               <form
-                className="mt-3 space-y-2 border-t border-slate-100 pt-3"
+                className="mt-3 space-y-2 border-t border-slate-100 py-3"
                 onSubmit={(event) => {
                   event.preventDefault();
                   const result = fieldNameSchema.safeParse(nextName);
@@ -108,13 +107,19 @@ export const FieldDetailsPanel = ({
                     setNameError(undefined);
                   }}
                 />
-                <div className="flex gap-2">
-                  <Button type="submit" size="sm" loading={mutating}>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="w-full"
+                    loading={mutating}
+                  >
                     Сохранить
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
+                    className="w-full"
                     onClick={() => setEditingName(false)}
                   >
                     Отмена
@@ -149,7 +154,7 @@ export const FieldDetailsPanel = ({
               <div className="grid gap-2">
                 <NavLink
                   to={DynamicLinks.analytics(field.id)}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
                 >
                   <ChartSpline aria-hidden="true" className="size-4" />
                   Открыть аналитику
@@ -162,15 +167,20 @@ export const FieldDetailsPanel = ({
               {field.boundary.length ? (
                 <details className="mt-4 text-sm" open>
                   <summary className="cursor-pointer py-2 font-medium focus-visible:outline-2 focus-visible:outline-green-700">
-                    Координаты контура · {field.boundary.length} точки
+                    Координаты контура · {field.boundary.length} точек
                   </summary>
-                  <table className="mt-2 w-full text-left text-xs tabular-nums">
+                  <table className="mt-2 w-full table-fixed text-left text-xs tabular-nums">
+                    <colgroup>
+                      <col className="w-8" />
+                      <col />
+                      <col />
+                    </colgroup>
                     <thead className="text-slate-500">
                       <tr>
-                        <th scope="col" className="py-2 font-normal">
+                        <th scope="col" className="py-2 pr-2 font-normal">
                           №
                         </th>
-                        <th scope="col" className="py-2 font-normal">
+                        <th scope="col" className="py-2 pr-2 font-normal">
                           Широта
                         </th>
                         <th scope="col" className="py-2 font-normal">
@@ -181,9 +191,9 @@ export const FieldDetailsPanel = ({
                     <tbody>
                       {field.boundary.map(({ latitude, longitude }, index) => (
                         <tr key={index} className="border-t border-slate-100">
-                          <td className="py-2">{index + 1}</td>
-                          <td>{latitude}</td>
-                          <td>{longitude}</td>
+                          <td className="py-2 pr-2">{index + 1}</td>
+                          <td className="pr-2">{latitude.toFixed(6)}</td>
+                          <td>{longitude.toFixed(6)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -209,13 +219,6 @@ export const FieldDetailsPanel = ({
         </>
       ) : (
         <div className="px-4 py-5">
-          <div className="mb-4 flex size-11 items-center justify-center rounded-lg border border-green-100 bg-green-50 text-green-800">
-            {fieldsCount ? (
-              <MousePointer2 aria-hidden="true" className="size-5" />
-            ) : (
-              <ScanLine aria-hidden="true" className="size-5" />
-            )}
-          </div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-800">
             {fieldsCount ? 'Просмотр поля' : 'Начало работы'}
           </p>

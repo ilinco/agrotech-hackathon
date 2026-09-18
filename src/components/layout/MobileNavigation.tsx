@@ -14,7 +14,7 @@ export const MobileNavigation = () => {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex min-h-16 flex-col items-center justify-center gap-1 text-xs font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-green-700 ${isActive ? "text-green-800" : "text-slate-500"}`
+              `flex min-h-16 cursor-pointer flex-col items-center justify-center gap-1 text-xs font-medium focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-green-700 ${isActive ? "text-green-800" : "text-slate-500"}`
             }
           >
             <Icon aria-hidden="true" className="size-5" />
