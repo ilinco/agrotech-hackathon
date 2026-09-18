@@ -35,7 +35,7 @@ export const FieldsList = ({
               type="button"
               aria-pressed={activeFieldId === field.id}
               onClick={() => onSelectField(field.id)}
-              className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-green-700 ${activeFieldId === field.id ? "border-green-700 bg-green-50" : "border-slate-200 hover:bg-slate-50"}`}
+              className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-green-700 ${activeFieldId === field.id ? "border-green-700 bg-green-50" : "border-slate-200 hover:bg-slate-50"}`}
             >
               <MapPinned
                 aria-hidden="true"

@@ -1,21 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { BookOpen, RefreshCw, Search } from "lucide-react";
-import { getApiErrorMessage } from "@/api/errors";
-import { getSpecies, syncSpecies } from "@/api/species";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Input } from "@/components/ui/Input";
-import { Loader } from "@/components/ui/Loader";
-import { Container } from "@/components/layout/Container";
-import { lifecycleLabels, taxonClassLabels } from "@/config/analysisLabels";
-import { useNotifications } from "@/hooks/useNotifications";
-import type { WeedSpecies } from "@/types/analysis";
+import { useEffect, useMemo, useState } from 'react';
+import { BookOpen, RefreshCw, Search } from 'lucide-react';
+import { getApiErrorMessage } from '@/api/errors';
+import { getSpecies, syncSpecies } from '@/api/species';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Loader } from '@/components/ui/Loader';
+import { Container } from '@/components/layout/Container';
+import { lifecycleLabels, taxonClassLabels } from '@/config/analysisLabels';
+import { useNotifications } from '@/hooks/useNotifications';
+import type { WeedSpecies } from '@/types/analysis';
 
 export const PlantsPage = () => {
   const notifications = useNotifications();
   const [species, setSpecies] = useState<WeedSpecies[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
 
@@ -28,7 +28,7 @@ export const PlantsPage = () => {
       .catch((error: unknown) => {
         if (!cancelled) {
           notifications.error(
-            "Не удалось загрузить справочник",
+            'Не удалось загрузить справочник',
             getApiErrorMessage(error),
           );
         }
@@ -42,13 +42,13 @@ export const PlantsPage = () => {
   }, [notifications]);
 
   const filteredSpecies = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+    const normalizedQuery = query.trim().toLocaleLowerCase('ru-RU');
     if (!normalizedQuery) return species;
     return species.filter((item) =>
       [item.name, item.latinName]
         .filter(Boolean)
         .some((value) =>
-          value?.toLocaleLowerCase("ru-RU").includes(normalizedQuery),
+          value?.toLocaleLowerCase('ru-RU').includes(normalizedQuery),
         ),
     );
   }, [query, species]);
@@ -59,12 +59,12 @@ export const PlantsPage = () => {
       const result = await syncSpecies();
       setSpecies(result.species);
       notifications.success(
-        "Справочник синхронизирован",
+        'Справочник синхронизирован',
         `Обработано видов: ${result.synced}.`,
       );
     } catch (error) {
       notifications.error(
-        "Не удалось синхронизировать справочник",
+        'Не удалось синхронизировать справочник',
         getApiErrorMessage(error),
       );
     } finally {
@@ -118,7 +118,7 @@ export const PlantsPage = () => {
                   <div className="min-w-0">
                     <h2 className="font-medium">{item.name}</h2>
                     <p className="mt-0.5 text-sm italic text-slate-500">
-                      {item.latinName ?? "Научное название не указано"}
+                      {item.latinName ?? 'Научное название не указано'}
                     </p>
                   </div>
                 </div>
@@ -126,16 +126,16 @@ export const PlantsPage = () => {
                   <Badge>
                     {item.taxonClass
                       ? taxonClassLabels[item.taxonClass]
-                      : "Класс не определён"}
+                      : 'Класс не определён'}
                   </Badge>
                   <Badge
                     tone={
-                      item.lifecycle === "PERENNIAL" ? "warning" : "neutral"
+                      item.lifecycle === 'PERENNIAL' ? 'warning' : 'neutral'
                     }
                   >
                     {item.lifecycle
                       ? lifecycleLabels[item.lifecycle]
-                      : "Цикл не определён"}
+                      : 'Цикл не определён'}
                   </Badge>
                 </div>
               </article>

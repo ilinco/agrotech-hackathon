@@ -404,7 +404,7 @@ export const AnalyticsPage = () => {
                       <button
                         type="button"
                         onClick={() => void openRun(item.id)}
-                        className={`w-full rounded-lg border p-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-green-700 ${run?.id === item.id ? 'border-green-700 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}
+                        className={`w-full cursor-pointer rounded-lg border p-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-green-700 ${run?.id === item.id ? 'border-green-700 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}
                       >
                         <span className="flex items-center justify-between gap-2">
                           <span className="font-medium">Анализ №{item.id}</span>

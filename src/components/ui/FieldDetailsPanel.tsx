@@ -3,7 +3,6 @@ import {
   ArrowRight,
   ChartSpline,
   Map,
-  MousePointer2,
   Pencil,
   ScanLine,
   X,
@@ -149,7 +148,7 @@ export const FieldDetailsPanel = ({
               <div className="grid gap-2">
                 <NavLink
                   to={DynamicLinks.analytics(field.id)}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-green-800 bg-green-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700"
                 >
                   <ChartSpline aria-hidden="true" className="size-4" />
                   Открыть аналитику
@@ -209,13 +208,6 @@ export const FieldDetailsPanel = ({
         </>
       ) : (
         <div className="px-4 py-5">
-          <div className="mb-4 flex size-11 items-center justify-center rounded-lg border border-green-100 bg-green-50 text-green-800">
-            {fieldsCount ? (
-              <MousePointer2 aria-hidden="true" className="size-5" />
-            ) : (
-              <ScanLine aria-hidden="true" className="size-5" />
-            )}
-          </div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-green-800">
             {fieldsCount ? 'Просмотр поля' : 'Начало работы'}
           </p>

@@ -29,15 +29,19 @@ export const Button = ({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none cursor-pointer ${variants[variant]} ${size === "sm" ? "min-h-9 px-3 py-1.5" : "min-h-10 px-4 py-2"} ${className}`}
+      className={`relative inline-flex shrink-0 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none ${variants[variant]} ${size === "sm" ? "min-h-9 px-3 py-1.5" : "min-h-10 px-4 py-2"} ${className}`}
     >
       {loading && (
         <span
           aria-hidden="true"
-          className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
+          className="absolute size-4 animate-spin rounded-full border-2 border-current border-r-transparent [animation-duration:700ms] motion-reduce:animate-none"
         />
       )}
-      {children}
+      <span
+        className={`inline-flex w-full items-center justify-center gap-2 transition-opacity duration-200 motion-reduce:transition-none ${loading ? "opacity-0" : "opacity-100"}`}
+      >
+        {children}
+      </span>
     </button>
   );
 };
